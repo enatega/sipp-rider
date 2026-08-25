@@ -16,6 +16,9 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.enatega.deliveries.rider',
+      config: {
+        googleMapsApiKey,
+      },
     },
     android: {
       adaptiveIcon: {
@@ -26,6 +29,11 @@ module.exports = {
       googleServicesFile: './google-services.json',
       edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
+      config: {
+        googleMaps: {
+          apiKey: googleMapsApiKey,
+        },
+      },
     },
     web: {
       favicon: './assets/favicon.png',
@@ -45,13 +53,6 @@ module.exports = {
           photosPermission: 'Allow $(PRODUCT_NAME) to access your photos to upload documents.',
           cameraPermission: 'Allow $(PRODUCT_NAME) to use your camera to capture documents.',
           microphonePermission: false,
-        },
-      ],
-      [
-        'react-native-maps',
-        {
-          androidGoogleMapsApiKey: googleMapsApiKey,
-          iosGoogleMapsApiKey: googleMapsApiKey,
         },
       ],
     ],

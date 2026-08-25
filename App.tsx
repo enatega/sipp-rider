@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import * as NavigationBar from 'expo-navigation-bar';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -9,6 +10,15 @@ import QueryProvider from './src/providers/QueryProvider';
 import { LocalizationProvider } from './src/localization/LocalizationProvider';
 import { AuthProvider } from './src/auth/AuthProvider';
 import './src/localization/i18n';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 function getNavigationButtonStyle(backgroundColor: string) {
   const hex = backgroundColor.replace('#', '');
@@ -31,6 +41,11 @@ function getNavigationButtonStyle(backgroundColor: string) {
 function ThemedApp() {
   const { theme } = useAppTheme();
   const navigationBarColor = theme.colors.gray800;
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationReceivedListener(() => undefined);
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS !== 'android') {
