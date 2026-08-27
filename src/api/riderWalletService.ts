@@ -7,7 +7,7 @@ import {
   RiderWalletWithdrawResponse,
 } from './riderWalletTypes';
 
-const BASE_PATH = '/api/v1/apps/deliveries/rider/wallet';
+const BASE_PATH = '/apps/deliveries/rider/wallet';
 
 export const riderWalletService = {
   getBalance: () => apiClient.get<RiderWalletBalanceResponse>(`${BASE_PATH}/balance`),

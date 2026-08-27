@@ -13,6 +13,7 @@ import Text from '../components/Text';
 import { RiderWalletHistoryItem } from '../api/riderWalletTypes';
 import { useTranslations } from '../localization/LocalizationProvider';
 import { useAppTheme } from '../theme/ThemeProvider';
+import { useAppCurrency } from '../hooks/useCurrency';
 import {
   useRiderWalletBalanceQuery,
   useRiderWalletHistoryInfiniteQuery,
@@ -23,22 +24,19 @@ import WalletBalanceCard from './wallet/components/WalletBalanceCard';
 import WalletTransactionRow from './wallet/components/WalletTransactionRow';
 import WithdrawBottomSheet from './wallet/components/WithdrawBottomSheet';
 import WithdrawSuccessModal from './wallet/components/WithdrawSuccessModal';
-
-const parseWithdrawAmount = (value: string): number => {
-  const normalized = value.replace(/[^0-9.]/g, '');
-  const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : 0;
-};
+import { parseWithdrawAmount, validateWithdraw } from './wallet/withdrawValidation';
 
 export default function WalletScreen() {
   const navigation = useNavigation();
   const { t } = useTranslations('app');
   const { theme } = useAppTheme();
+  const { formatCurrency } = useAppCurrency();
   const insets = useSafeAreaInsets();
 
   const [isWithdrawSheetVisible, setIsWithdrawSheetVisible] = useState(false);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [withdrawAmountInput, setWithdrawAmountInput] = useState('');
+  const [withdrawError, setWithdrawError] = useState('');
   const [successMessage, setSuccessMessage] = useState(t('wallet_withdraw_success_subtitle'));
 
   const balanceQuery = useRiderWalletBalanceQuery();
@@ -59,22 +57,32 @@ export default function WalletScreen() {
 
   const onOpenWithdraw = () => {
     setWithdrawAmountInput('');
+    setWithdrawError(
+      balanceQuery.data?.pending_request ? t('wallet_withdraw_pending') : '',
+    );
     setIsWithdrawSheetVisible(true);
   };
 
   const onConfirmWithdraw = async () => {
     const amount = parseWithdrawAmount(withdrawAmountInput);
-    if (amount <= 0) {
+    const validationError = validateWithdraw(
+      amount,
+      balanceQuery.data?.available_amount ?? 0,
+      Boolean(balanceQuery.data?.pending_request),
+    );
+    if (validationError) {
+      setWithdrawError(t(`wallet_withdraw_${validationError}`));
       return;
     }
 
+    setWithdrawError('');
     try {
       const response = await withdrawMutation.mutateAsync({ amount });
       setSuccessMessage(response.eta_message || t('wallet_withdraw_success_subtitle'));
       setIsWithdrawSheetVisible(false);
       setIsSuccessModalVisible(true);
-    } catch {
-      // Error states are intentionally non-blocking for now.
+    } catch (error) {
+      setWithdrawError(error instanceof Error ? error.message : t('wallet_withdraw_failed'));
     }
   };
 
@@ -121,7 +129,18 @@ export default function WalletScreen() {
               balanceLabel={t('wallet_current_balance')}
             />
 
-            <Text weight="semiBold" style={[styles.sectionTitle, { color: theme.colors.gray900 }]}>
+            {balanceQuery.data?.pending_request ? (
+              <View style={[styles.pendingCard, { backgroundColor: theme.colors.gray50, borderColor: theme.colors.gray300 }]}>
+                <Text weight="semiBold" style={{ color: theme.colors.gray900 }}>
+                  {t('wallet_pending_request')}
+                </Text>
+                <Text style={{ color: theme.colors.gray600 }}>
+                  {formatCurrency(balanceQuery.data.pending_request.amount)} · {balanceQuery.data.pending_request.status}
+                </Text>
+              </View>
+            ) : null}
+
+            <Text weight="semiBold" style={[styles.sectionTitle, { color: theme.colors.gray900 }]}> 
               {t('wallet_recent_transactions')}
             </Text>
           </View>
@@ -155,13 +174,17 @@ export default function WalletScreen() {
         visible={isWithdrawSheetVisible}
         availableAmount={balanceQuery.data?.available_amount ?? 0}
         amountInput={withdrawAmountInput}
-        onAmountInputChange={setWithdrawAmountInput}
+        onAmountInputChange={(value) => {
+          setWithdrawAmountInput(value);
+          setWithdrawError('');
+        }}
         onClose={() => setIsWithdrawSheetVisible(false)}
         onConfirm={onConfirmWithdraw}
         confirmLabel={t('wallet_confirm_withdraw')}
         availableLabel={t('wallet_available_amount')}
         enterAmountLabel={t('wallet_enter_amount')}
         isLoading={withdrawMutation.isPending}
+        errorMessage={withdrawError}
         bottomInset={insets.bottom}
       />
 
@@ -198,5 +221,11 @@ const styles = StyleSheet.create({
   footerLoader: {
     paddingVertical: 16,
     alignItems: 'center',
+  },
+  pendingCard: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    gap: 4,
   },
 });

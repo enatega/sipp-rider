@@ -32,7 +32,7 @@ export default function BankManagementScreen() {
     accountTitle: '',
     accountNumber: '',
     iban: '',
-    currency: '',
+    currency: 'USD',
     accountCode: '',
   });
   const [errors, setErrors] = useState<BankFormErrors>({});
@@ -76,7 +76,7 @@ export default function BankManagementScreen() {
         accountTitle: form.accountTitle.trim(),
         accountNumber: form.accountNumber.trim(),
         iban: form.iban.trim(),
-        currency: form.currency.trim() || bankDetails?.currency || '',
+        currency: form.currency.trim() || bankDetails?.currency || 'USD',
         accountCode: form.accountCode.trim(),
       });
       setSuccessMessage(response.message);

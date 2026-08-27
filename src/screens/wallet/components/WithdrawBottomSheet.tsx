@@ -25,6 +25,7 @@ type Props = {
   availableLabel: string;
   enterAmountLabel: string;
   isLoading: boolean;
+  errorMessage?: string;
   bottomInset?: number;
 };
 
@@ -39,6 +40,7 @@ export default function WithdrawBottomSheet({
   availableLabel,
   enterAmountLabel,
   isLoading,
+  errorMessage,
   bottomInset = 0,
 }: Props) {
   const { theme } = useAppTheme();
@@ -46,11 +48,12 @@ export default function WithdrawBottomSheet({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.bottomContainer}
-        >
+      <Pressable style={styles.backdrop} onPress={onClose}>
+        <Pressable onPress={(event) => event.stopPropagation()}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.bottomContainer}
+          >
           <View
             style={[
               styles.sheet,
@@ -89,9 +92,13 @@ export default function WithdrawBottomSheet({
               />
             </View>
 
+            {errorMessage ? (
+              <Text style={[styles.error, { color: theme.colors.red500 }]}>{errorMessage}</Text>
+            ) : null}
+
             <View style={[styles.separator, { backgroundColor: theme.colors.gray300 }]} />
 
-            <Pressable disabled={isLoading} onPress={onConfirm} style={styles.buttonWrap}>
+            <View style={styles.buttonWrap}>
               <Button
                 label={confirmLabel}
                 onPress={onConfirm}
@@ -104,10 +111,11 @@ export default function WithdrawBottomSheet({
                   <ActivityIndicator color={theme.colors.gray900} />
                 </View>
               ) : null}
-            </Pressable>
+            </View>
           </View>
-        </KeyboardAvoidingView>
-      </View>
+          </KeyboardAvoidingView>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
@@ -171,6 +179,10 @@ const styles = StyleSheet.create({
   },
   buttonWrap: {
     position: 'relative',
+  },
+  error: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   confirmButton: {
     height: 54,
