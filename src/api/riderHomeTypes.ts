@@ -55,6 +55,7 @@ export type AssignOrderResponse = {
   orderId?: string;
   riderId?: string;
   status?: string;
+  orderStatus?: string;
 };
 
 export type RiderOrderUpdatableStatus =
@@ -69,7 +70,6 @@ export type RiderOrderUpdatableStatus =
 
 export type UpdateRiderOrderStatusPayload = {
   status: RiderOrderUpdatableStatus;
-  riderId: string;
 };
 
 export type UpdateRiderOrderStatusResponse = {

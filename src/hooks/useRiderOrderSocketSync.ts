@@ -110,6 +110,9 @@ export function useRiderOrderSocketSync() {
       (payload: RiderOrderAvailablePayload) => {
         console.log("[rider][socket] rider-order-available received", payload);
         if (!payload?.orderId) return;
+        if (payload.status === 'rider_assigned') {
+          removeOrderFromNewOrdersCache(queryClient, payload.orderId);
+        }
         invalidateRiderOrderCaches(payload.orderId);
         void syncNewOrderBeepFromSummary();
       },

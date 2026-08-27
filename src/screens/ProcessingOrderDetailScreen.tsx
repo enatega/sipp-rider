@@ -14,7 +14,6 @@ import { useAppTheme } from '../theme/ThemeProvider';
 import { useTranslations } from '../localization/LocalizationProvider';
 import { useRiderOrderDetailQuery } from '../hooks/useRiderOrderDetailQuery';
 import { useUpdateRiderOrderStatusMutation } from '../hooks/useRiderHomeMutations';
-import { useAuth } from '../auth/AuthProvider';
 import OrderDetailTopBar from './orderDetail/components/OrderDetailTopBar';
 import {
   DELIVERY_PROGRESS_ORDER,
@@ -104,7 +103,6 @@ function getNextStatusTitleKey(
 export default function ProcessingOrderDetailScreen({ route, navigation }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
-  const { session } = useAuth();
   const isFocused = useIsFocused();
   const insets = useSafeAreaInsets();
   const { orderId } = route.params;
@@ -222,10 +220,9 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const handlePrimaryAction = () => {
     if (waitingForStoreReadyToPickup || !canUpdateStatus) return;
 
-    const riderId = session.user?.id;
     const serverRiderStatus = detailQuery.data?.riderStatus;
 
-    if (nextUpdateStatus && riderId) {
+    if (nextUpdateStatus) {
       // Guard against stale UI: skip duplicate transition and re-sync order detail.
       if (serverRiderStatus === nextUpdateStatus || serverOrderStatus === nextUpdateStatus) {
         void detailQuery.refetch();
@@ -233,7 +230,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       }
 
       updateStatusMutation.mutate(
-        { status: nextUpdateStatus, riderId },
+        { status: nextUpdateStatus },
         {
           onError: (error) => {
             // If backend says transition is invalid (already moved), refresh state and continue.
