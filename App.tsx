@@ -9,6 +9,8 @@ import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import QueryProvider from './src/providers/QueryProvider';
 import { LocalizationProvider } from './src/localization/LocalizationProvider';
 import { AuthProvider } from './src/auth/AuthProvider';
+import IncomingOrderAlert from './src/components/IncomingOrderAlert';
+import { RiderOrderAlertsProvider } from './src/providers/RiderOrderAlertsProvider';
 import './src/localization/i18n';
 
 Notifications.setNotificationHandler({
@@ -43,11 +45,6 @@ function ThemedApp() {
   const navigationBarColor = theme.colors.gray800;
 
   useEffect(() => {
-    const subscription = Notifications.addNotificationReceivedListener(() => undefined);
-    return () => subscription.remove();
-  }, []);
-
-  useEffect(() => {
     if (Platform.OS !== 'android') {
       return;
     }
@@ -68,8 +65,11 @@ function ThemedApp() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}> 
-      <RootNavigator />
-      <StatusBar style={theme.isDark ? 'light' : 'dark'} />
+      <RiderOrderAlertsProvider>
+        <RootNavigator />
+        <IncomingOrderAlert />
+        <StatusBar style={theme.isDark ? 'light' : 'dark'} />
+      </RiderOrderAlertsProvider>
     </View>
   );
 }

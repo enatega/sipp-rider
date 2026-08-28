@@ -95,4 +95,16 @@ export const riderHomeService = {
       `${RIDER_HOME_BASE}/orders/${orderId}/assign-me`,
     );
   },
+
+  acceptOrderOffer: async (orderId: string) => {
+    return apiClient.patch<AssignOrderResponse>(
+      `${RIDER_HOME_BASE}/orders/${orderId}/offers/accept`,
+    );
+  },
+
+  declineOrderOffer: async (orderId: string) => {
+    return apiClient.patch<void>(
+      `${RIDER_HOME_BASE}/orders/${orderId}/offers/decline`,
+    );
+  },
 };

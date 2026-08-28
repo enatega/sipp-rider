@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
+const ORDER_OFFERS_ANDROID_CHANNEL_ID = 'order-offers';
 
 const getProjectId = () =>
   Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? null;
@@ -34,6 +35,13 @@ export function useExpoPushToken() {
           name: 'default',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#7BAF00',
+        });
+        await Notifications.setNotificationChannelAsync(ORDER_OFFERS_ANDROID_CHANNEL_ID, {
+          name: 'Incoming order offers',
+          importance: Notifications.AndroidImportance.MAX,
+          sound: 'default',
+          vibrationPattern: [0, 500, 500, 500],
           lightColor: '#7BAF00',
         });
       }

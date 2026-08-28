@@ -11,10 +11,18 @@ import { riderOrderDetailService } from '../api/riderOrderDetailService';
 import { applyAssignedSummaryCounts, removeOrderFromNewOrdersCache } from './riderHomeCache';
 
 export function useAssignOrderMutation() {
+  return useClaimOrderMutation(riderHomeService.assignOrderToCurrentRider);
+}
+
+export function useAcceptOrderOfferMutation() {
+  return useClaimOrderMutation(riderHomeService.acceptOrderOffer);
+}
+
+function useClaimOrderMutation(mutationFn: (orderId: string) => Promise<AssignOrderResponse>) {
   const queryClient = useQueryClient();
 
   return useMutation<AssignOrderResponse, ApiError, string>({
-    mutationFn: riderHomeService.assignOrderToCurrentRider,
+    mutationFn,
     onSuccess: async (response, orderId) => {
       const assignedOrderId = response?.orderId ?? orderId;
       if (assignedOrderId) {
@@ -27,6 +35,12 @@ export function useAssignOrderMutation() {
         queryClient.invalidateQueries({ queryKey: riderHomeKeys.ordersAll() }),
       ]);
     },
+  });
+}
+
+export function useDeclineOrderOfferMutation() {
+  return useMutation<void, ApiError, string>({
+    mutationFn: riderHomeService.declineOrderOffer,
   });
 }
 

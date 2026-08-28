@@ -9,6 +9,7 @@ export type RiderOrderStatusUpdatedPayload = {
   riderStatus: string | null;
   riderId: string | null;
   updatedAt: string;
+  assignmentType?: 'broadcast_claim' | 'manual';
 };
 
 export type RiderStatusUpdatedPayload = {
@@ -21,10 +22,15 @@ export type RiderStatusUpdatedPayload = {
 
 export type RiderOrderAvailablePayload = {
   orderId: string;
+  orderCode: string;
   storeId: string;
+  storeName: string;
+  pickupAddress: string | null;
+  orderAmount: number;
   zoneId: string;
   status: string;
   updatedAt: string;
+  expiresAt: string;
 };
 
 type RiderSocketSession = {
