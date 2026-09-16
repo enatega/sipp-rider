@@ -1,5 +1,5 @@
 const en = {
-  app_name: 'Enatega Deliveries Rider App',
+  app_name: 'Sip Rider',
   welcome_title: 'Rider Workspace',
   welcome_subtitle: 'Theme, localization, and reusable base components are ready.',
   change_theme: 'Switch theme',

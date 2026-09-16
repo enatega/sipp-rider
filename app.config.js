@@ -2,20 +2,30 @@ const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY ?? 'DUMMY_GOOGLE_MAPS_A
 
 module.exports = {
   expo: {
-    name: 'EnategaDeliveriesRiderApp',
+    name: 'Sip Rider',
     slug: 'enatega-deliveries-rider-app',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
     splash: {
-      image: './assets/splash-icon.png',
-      resizeMode: 'contain',
+      image: './assets/splash-light.png',
+      resizeMode: 'cover',
       backgroundColor: '#ffffff',
     },
     ios: {
       supportsTablet: true,
       bundleIdentifier: 'com.enatega.deliveries.rider',
+      splash: {
+        image: './assets/splash-light.png',
+        resizeMode: 'cover',
+        backgroundColor: '#ffffff',
+        dark: {
+          image: './assets/splash-dark.png',
+          resizeMode: 'cover',
+          backgroundColor: '#ffffff',
+        },
+      },
       config: {
         googleMapsApiKey,
       },
@@ -24,6 +34,16 @@ module.exports = {
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
+      },
+      splash: {
+        image: './assets/splash-light.png',
+        resizeMode: 'cover',
+        backgroundColor: '#ffffff',
+        dark: {
+          image: './assets/splash-dark.png',
+          resizeMode: 'cover',
+          backgroundColor: '#ffffff',
+        },
       },
       package: 'com.enatega.deliveries.rider',
       googleServicesFile: './google-services.json',
