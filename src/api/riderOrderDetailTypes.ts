@@ -27,6 +27,12 @@ export type RiderOrderDetail = {
   paymentMethod: string | null;
   paymentStatus: string | null;
   customerComment: string | null;
+  courierNote: string | null;
+  customerUserId: string | null;
+  pickupLatitude: number | null;
+  pickupLongitude: number | null;
+  deliveryLatitude: number | null;
+  deliveryLongitude: number | null;
   customerName: string | null;
   customerPhone: string | null;
   customerId: string | null;
@@ -36,6 +42,7 @@ export type RiderOrderDetail = {
   canAssignMe: boolean | null;
   canUpdateStatus: boolean | null;
   nextAllowedStatuses: string[];
+  eta?: import('./riderHomeTypes').RiderOrderEta | null;
 };
 
 export type RiderOrderDetailEnvelope = {

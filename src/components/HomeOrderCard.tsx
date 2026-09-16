@@ -72,7 +72,7 @@ export default function HomeOrderCard({ order, tab }: Props) {
   const safeDistanceLabel = order.distanceKm == null ? '—' : `${order.distanceKm.toFixed(1)} Km`;
   const safePaymentMethod = order.paymentMethod ?? '—';
   const safePaymentStatus = order.paymentStatus ?? '—';
-  const safeComment = order.courierNote ?? '—';
+  const safeComment = order.courierNote?.trim() || extractCourierNote(order.customerComment);
   const safeStoreImage = order.storeImage ?? '';
   const safeCreatedAt = order.createdAt ? new Date(order.createdAt) : null;
   const safeTime = safeCreatedAt && !Number.isNaN(safeCreatedAt.getTime())
@@ -291,6 +291,17 @@ export default function HomeOrderCard({ order, tab }: Props) {
       </Modal>
     </Pressable>
   );
+}
+
+function extractCourierNote(customerComment: string | null) {
+  if (!customerComment?.trim()) return null;
+
+  const courierMatch = customerComment.match(
+    /(?:^|\n)\s*Courier:\s*([\s\S]*?)$/i,
+  );
+
+  return courierMatch?.[1]?.trim()
+    || (!/^\s*Restaurant:/i.test(customerComment) ? customerComment.trim() : null);
 }
 
 type LocationRowProps = {

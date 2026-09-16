@@ -4,6 +4,15 @@ export type RiderHomeSummary = {
   deliveredOrders: number;
 };
 
+export type RiderOrderEta = {
+  phase: 'pre_pickup' | 'post_pickup' | 'arrived' | 'unavailable';
+  estimatedMinutes: number | null;
+  remainingSeconds: number | null;
+  distanceKm: number | null;
+  source: string;
+  calculatedAt: string;
+};
+
 export type RiderHomeOrder = {
   orderId: string | null;
   orderCode: string | null;
@@ -21,6 +30,7 @@ export type RiderHomeOrder = {
   paymentStatus: string | null;
   customerComment: string | null;
   courierNote: string | null;
+  eta?: RiderOrderEta | null;
   createdAt: string | null;
   canAssignMe: boolean | null;
 };

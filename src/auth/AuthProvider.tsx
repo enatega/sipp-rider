@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { AuthSessionResponse } from '../api/authTypes';
 import { authSession, AuthSession } from './authSession';
 import { setSessionExpiredHandler } from '../api/apiClient';
+import { stopRiderBackgroundLocation } from '../location/riderBackgroundLocationTask';
 
 type AuthContextValue = {
   session: AuthSession;
@@ -28,9 +29,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .getSession()
       .then((value) => {
         setSession(value);
-        if (value.token) {
-          console.log('[AUTH TOKEN][RIDER]', value.token);
-        }
       })
       .finally(() => {
         setIsReady(true);
@@ -39,7 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setSessionFromResponse = async (payload: AuthSessionResponse) => {
     await authSession.setSession(payload);
-    console.log('[AUTH TOKEN][RIDER]', payload.accessToken);
     setSession({
       token: payload.accessToken,
       refreshToken: payload.refreshToken ?? null,
@@ -48,12 +45,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const clearSession = async () => {
+    await stopRiderBackgroundLocation().catch(() => undefined);
     await authSession.clearSession();
     setSession(emptySession);
   };
 
   useEffect(() => {
     setSessionExpiredHandler(async () => {
+      await stopRiderBackgroundLocation().catch(() => undefined);
       await authSession.clearSession();
       setSession(emptySession);
     });

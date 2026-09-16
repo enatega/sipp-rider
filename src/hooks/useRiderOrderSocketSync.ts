@@ -78,6 +78,7 @@ export function useRiderOrderSocketSync() {
               ...current,
               status: payload.status ?? current.status,
               riderStatus: payload.riderStatus ?? current.riderStatus,
+              eta: payload.eta ?? current.eta,
             };
           },
         );

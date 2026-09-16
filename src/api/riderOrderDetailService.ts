@@ -26,6 +26,12 @@ const EMPTY_ORDER_DETAIL: RiderOrderDetail = {
   paymentMethod: null,
   paymentStatus: null,
   customerComment: null,
+  courierNote: null,
+  customerUserId: null,
+  pickupLatitude: null,
+  pickupLongitude: null,
+  deliveryLatitude: null,
+  deliveryLongitude: null,
   customerName: null,
   customerPhone: null,
   customerId: null,
@@ -35,6 +41,7 @@ const EMPTY_ORDER_DETAIL: RiderOrderDetail = {
   canAssignMe: null,
   canUpdateStatus: null,
   nextAllowedStatuses: [],
+  eta: null,
 };
 
 function normalizeOrderDetail(

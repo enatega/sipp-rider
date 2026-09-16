@@ -107,4 +107,20 @@ export const riderHomeService = {
       `${RIDER_HOME_BASE}/orders/${orderId}/offers/decline`,
     );
   },
+
+  updateLiveLocation: async (
+    orderId: string,
+    payload: {
+      latitude: number;
+      longitude: number;
+      heading?: number;
+      speed?: number;
+      timestamp?: number;
+    },
+  ) => {
+    return apiClient.patch<{ updatedAt: string }>(
+      `${RIDER_HOME_BASE}/orders/${orderId}/location`,
+      payload,
+    );
+  },
 };

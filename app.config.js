@@ -68,6 +68,16 @@ module.exports = {
       'expo-notifications',
       'expo-secure-store',
       [
+        'expo-location',
+        {
+          isAndroidBackgroundLocationEnabled: true,
+          isAndroidForegroundServiceEnabled: true,
+          isIosBackgroundLocationEnabled: true,
+          locationAlwaysAndWhenInUsePermission: 'Allow Sip Rider to share your location during an active delivery, including while navigation is open.',
+          locationWhenInUsePermission: 'Allow Sip Rider to share your live location while you deliver an active order.',
+        },
+      ],
+      [
         'expo-image-picker',
         {
           photosPermission: 'Allow $(PRODUCT_NAME) to access your photos to upload documents.',

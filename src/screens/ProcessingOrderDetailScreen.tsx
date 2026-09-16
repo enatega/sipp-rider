@@ -22,11 +22,17 @@ import {
 } from './orderDetail/progress';
 import { StatusBar } from 'expo-status-bar';
 import type { RiderOrderUpdatableStatus } from '../api/riderHomeTypes';
+import type MapView from 'react-native-maps';
+import { useRiderLiveLocationTracking } from '../hooks/useRiderLiveLocationTracking';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ProcessingOrderDetail'>;
 
-const FALLBACK_PICKUP = { latitude: 33.6844, longitude: 73.0479 };
-const FALLBACK_DELIVERY = { latitude: 33.6952, longitude: 73.0689 };
+const FALLBACK_REGION = {
+  latitude: 33.6844,
+  longitude: 73.0479,
+  latitudeDelta: 0.03,
+  longitudeDelta: 0.03,
+};
 const DETAIL_RESUME_REFETCH_COOLDOWN_MS = 15_000;
 
 const STATUS_TITLE_KEY: Record<RiderDeliveryProgressStatus, string> = {
@@ -112,6 +118,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const [headerHeight, setHeaderHeight] = useState(56);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastResumeRefetchAtRef = useRef(0);
+  const mapRef = useRef<MapView>(null);
   const isFocusedRef = useRef(isFocused);
   const isFetchingRef = useRef(detailQuery.isFetching);
 
@@ -149,15 +156,57 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     };
   }, [detailQuery.refetch, orderId]);
 
-  const mapRegion = useMemo(
-    () => ({
-      latitude: (FALLBACK_PICKUP.latitude + FALLBACK_DELIVERY.latitude) / 2,
-      longitude: (FALLBACK_PICKUP.longitude + FALLBACK_DELIVERY.longitude) / 2,
-      latitudeDelta: 0.03,
-      longitudeDelta: 0.03,
-    }),
-    [],
+  const isLiveTrackingStatus = ['picked_up', 'out_for_delivery', 'arrived'].includes(
+    detailQuery.data?.status ?? '',
   );
+  const riderLocation = useRiderLiveLocationTracking({
+    customerUserId: detailQuery.data?.customerUserId,
+    enabled: isLiveTrackingStatus,
+    orderId,
+  });
+  const pickupCoordinate = useMemo(
+    () => toCoordinate(detailQuery.data?.pickupLatitude, detailQuery.data?.pickupLongitude),
+    [detailQuery.data?.pickupLatitude, detailQuery.data?.pickupLongitude],
+  );
+  const deliveryCoordinate = useMemo(
+    () => toCoordinate(detailQuery.data?.deliveryLatitude, detailQuery.data?.deliveryLongitude),
+    [detailQuery.data?.deliveryLatitude, detailQuery.data?.deliveryLongitude],
+  );
+  const navigationDestination = isLiveTrackingStatus
+    ? deliveryCoordinate
+    : pickupCoordinate;
+  const visibleMapCoordinates = useMemo(
+    () => [
+      riderLocation,
+      navigationDestination,
+    ].filter((coordinate): coordinate is { latitude: number; longitude: number } => Boolean(coordinate)),
+    [navigationDestination, riderLocation],
+  );
+  const mapRegion = useMemo(
+    () => getRegionForCoordinates(visibleMapCoordinates) ?? FALLBACK_REGION,
+    [visibleMapCoordinates],
+  );
+
+  useEffect(() => {
+    if (visibleMapCoordinates.length === 0) return;
+
+    if (visibleMapCoordinates.length === 1) {
+      mapRef.current?.animateToRegion(
+        {
+          ...visibleMapCoordinates[0],
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        220,
+      );
+      return;
+    }
+
+    mapRef.current?.fitToCoordinates(visibleMapCoordinates, {
+      animated: true,
+      edgePadding: { top: 64, right: 48, bottom: 280, left: 48 },
+    });
+  }, [visibleMapCoordinates]);
 
   const currentProgressStatus = useMemo(
     () => resolveProgressStatusFromOrder(detailQuery.data?.status, detailQuery.data?.riderStatus),
@@ -165,7 +214,12 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   );
 
   const openNavigation = async () => {
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${FALLBACK_PICKUP.latitude},${FALLBACK_PICKUP.longitude}&destination=${FALLBACK_DELIVERY.latitude},${FALLBACK_DELIVERY.longitude}&travelmode=driving`;
+    if (!navigationDestination) return;
+
+    const origin = riderLocation
+      ? `&origin=${riderLocation.latitude},${riderLocation.longitude}`
+      : '';
+    const url = `https://www.google.com/maps/dir/?api=1${origin}&destination=${navigationDestination.latitude},${navigationDestination.longitude}&travelmode=driving`;
     await Linking.openURL(url);
   };
 
@@ -253,28 +307,27 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.white }]} edges={['top']}>
       <Map
+        ref={mapRef}
         style={[styles.map, { top: headerHeight }]}
         initialRegion={mapRegion}
-        region={mapRegion}
         markers={[
-          {
-            id: 'delivery',
-            coordinate: FALLBACK_DELIVERY,
+          ...(navigationDestination ? [{
+            id: 'destination',
+            coordinate: navigationDestination,
             render: (
-              <View style={[styles.pinOuter, { backgroundColor: theme.colors.primary }]}>
+              <View style={[styles.pinOuter, { backgroundColor: theme.colors.primary }]}> 
                 <View style={[styles.pinInner, { backgroundColor: theme.colors.zinc800 }]} />
               </View>
             ),
-          },
-        ]}
-        polylines={[
-          {
-            id: 'route',
-            coordinates: [FALLBACK_PICKUP, FALLBACK_DELIVERY],
-            strokeColor: theme.colors.mapRoute,
-            strokeWidth: 3,
-            lineDashPattern: [6, 6],
-          },
+          }] : []),
+          ...(riderLocation ? [{
+            id: 'rider',
+            coordinate: riderLocation,
+            zIndex: 2,
+            render: (
+              <View style={[styles.riderPin, { backgroundColor: theme.colors.zinc800, borderColor: theme.colors.white }]} />
+            ),
+          }] : []),
         ]}
       />
 
@@ -516,6 +569,38 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   );
 }
 
+function toCoordinate(latitude?: number | null, longitude?: number | null) {
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { latitude: Number(latitude), longitude: Number(longitude) };
+}
+
+function getRegionForCoordinates(
+  coordinates: Array<{ latitude: number; longitude: number }>,
+) {
+  if (coordinates.length === 0) return null;
+  if (coordinates.length === 1) {
+    return {
+      ...coordinates[0],
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    };
+  }
+
+  const latitudes = coordinates.map((coordinate) => coordinate.latitude);
+  const longitudes = coordinates.map((coordinate) => coordinate.longitude);
+  const minLatitude = Math.min(...latitudes);
+  const maxLatitude = Math.max(...latitudes);
+  const minLongitude = Math.min(...longitudes);
+  const maxLongitude = Math.max(...longitudes);
+
+  return {
+    latitude: (minLatitude + maxLatitude) / 2,
+    longitude: (minLongitude + maxLongitude) / 2,
+    latitudeDelta: Math.max(maxLatitude - minLatitude, 0.006) * 1.4,
+    longitudeDelta: Math.max(maxLongitude - minLongitude, 0.006) * 1.4,
+  };
+}
+
 function ChevronIcon({ up, color }: { up: boolean; color: string }) {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none" style={up ? styles.chevronUp : undefined}>
@@ -598,6 +683,12 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 999,
+  },
+  riderPin: {
+    borderRadius: 14,
+    borderWidth: 3,
+    height: 28,
+    width: 28,
   },
   progressCardWrap: {
     paddingHorizontal: 16,

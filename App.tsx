@@ -12,6 +12,7 @@ import { AuthProvider } from './src/auth/AuthProvider';
 import IncomingOrderAlert from './src/components/IncomingOrderAlert';
 import { RiderOrderAlertsProvider } from './src/providers/RiderOrderAlertsProvider';
 import './src/localization/i18n';
+import './src/location/riderBackgroundLocationTask';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({

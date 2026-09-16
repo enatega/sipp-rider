@@ -8,8 +8,10 @@ export type RiderOrderStatusUpdatedPayload = {
   status: string;
   riderStatus: string | null;
   riderId: string | null;
+  riderUserId?: string | null;
   updatedAt: string;
   assignmentType?: 'broadcast_claim' | 'manual';
+  eta?: import('../api/riderHomeTypes').RiderOrderEta | null;
 };
 
 export type RiderStatusUpdatedPayload = {
@@ -31,6 +33,17 @@ export type RiderOrderAvailablePayload = {
   status: string;
   updatedAt: string;
   expiresAt: string;
+};
+
+export type RiderLocationUpdatePayload = {
+  orderId: string;
+  riderUserId: string;
+  customerUserId: string;
+  latitude: number;
+  longitude: number;
+  heading?: number;
+  speed?: number;
+  timestamp: number;
 };
 
 type RiderSocketSession = {
@@ -197,6 +210,16 @@ class RiderOrdersSocketClient {
     return () => {
       socket.off('rider-order-available', handler);
     };
+  }
+
+  publishLocation(payload: RiderLocationUpdatePayload) {
+    const socket = this.connect();
+    if (!this.token) return false;
+
+    // Socket.IO buffers this event while reconnecting. Keeping the newest GPS
+    // sample queued avoids waiting for another movement callback after connect.
+    socket.emit('update-rider-current-location', payload);
+    return true;
   }
 }
 
