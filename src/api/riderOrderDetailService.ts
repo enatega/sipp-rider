@@ -36,6 +36,7 @@ const EMPTY_ORDER_DETAIL: RiderOrderDetail = {
   customerPhone: null,
   customerId: null,
   chatBoxId: null,
+  customerRiderChatBoxId: null,
   items: [],
   createdAt: null,
   canAssignMe: null,

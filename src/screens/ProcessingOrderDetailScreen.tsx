@@ -230,12 +230,24 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   };
 
   const openChat = () => {
+    const isCustomerDeliveryChat = [
+      'picked_up',
+      'out_for_delivery',
+      'arrived',
+    ].includes(detailQuery.data?.status ?? '');
+
     navigation.navigate('OrderChat', {
       orderId,
-      name: detailQuery.data?.storeName?.trim() || t('order_chat_default_name'),
+      name: isCustomerDeliveryChat
+        ? detailQuery.data?.customerName?.trim() || t('order_chat_default_name')
+        : detailQuery.data?.storeName?.trim() || t('order_chat_default_name'),
       phone: detailQuery.data?.customerPhone ?? null,
-      chatBoxId: detailQuery.data?.chatBoxId ?? null,
-      receiverId: detailQuery.data?.storeUserId ?? null,
+      chatBoxId: isCustomerDeliveryChat
+        ? detailQuery.data?.customerRiderChatBoxId ?? null
+        : detailQuery.data?.chatBoxId ?? null,
+      receiverId: isCustomerDeliveryChat
+        ? detailQuery.data?.customerUserId ?? null
+        : detailQuery.data?.storeUserId ?? null,
     });
   };
 

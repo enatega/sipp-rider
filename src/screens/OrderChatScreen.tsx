@@ -165,12 +165,6 @@ export default function OrderChatScreen({ navigation, route }: Props) {
       receiverId,
       text,
     };
-    supportChatSocketClient.sendMessage({
-      sender: senderId,
-      receiver: receiverId,
-      text,
-      chatBoxId: activeChatBoxId,
-    });
     console.log('[SUPPORT CHAT][SEND][REQUEST]', payload);
     setLocalError(null);
     sendMessageMutation.mutate(
@@ -199,8 +193,8 @@ export default function OrderChatScreen({ navigation, route }: Props) {
             const sentMessage: SupportChatMessage = {
               id: response.detail?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
               text: resolvedText,
-              senderId,
-              receiverId,
+              senderId: response.detail?.sender_id ?? senderId,
+              receiverId: response.detail?.receiver_id ?? receiverId,
               createdAt: response.detail?.createdAt ?? response.detail?.updatedAt ?? new Date().toISOString(),
             };
 

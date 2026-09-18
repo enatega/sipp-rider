@@ -37,6 +37,7 @@ export type RiderOrderDetail = {
   customerPhone: string | null;
   customerId: string | null;
   chatBoxId: string | null;
+  customerRiderChatBoxId: string | null;
   items: RiderOrderItem[];
   createdAt: string | null;
   canAssignMe: boolean | null;
