@@ -2,8 +2,9 @@ const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY ?? 'DUMMY_GOOGLE_MAPS_A
 
 module.exports = {
   expo: {
-    name: 'Sip Rider',
-    slug: 'enatega-deliveries-rider-app',
+    name: 'Sipp Rider',
+    slug: 'sipp-rider',
+    owner: "sipp-delivery",
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -15,7 +16,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.enatega.deliveries.rider',
+      bundleIdentifier: 'com.sipp.rider.app',
       splash: {
         image: './assets/splash-light.png',
         resizeMode: 'cover',
@@ -45,7 +46,7 @@ module.exports = {
           backgroundColor: '#ffffff',
         },
       },
-      package: 'com.enatega.deliveries.rider',
+      package: 'com.sipp.rider.app',
       googleServicesFile: './google-services.json',
       edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
@@ -59,7 +60,7 @@ module.exports = {
       favicon: './assets/favicon.png',
     },
     updates: {
-      url: 'https://u.expo.dev/dd251847-b122-424b-b7dd-60bd8ddbbe90',
+      url: 'https://u.expo.dev/54910e7e-fa72-4582-aec7-a45f203f5873',
     },
     runtimeVersion: {
       policy: 'appVersion',
@@ -73,8 +74,8 @@ module.exports = {
           isAndroidBackgroundLocationEnabled: true,
           isAndroidForegroundServiceEnabled: true,
           isIosBackgroundLocationEnabled: true,
-          locationAlwaysAndWhenInUsePermission: 'Allow Sip Rider to share your location during an active delivery, including while navigation is open.',
-          locationWhenInUsePermission: 'Allow Sip Rider to share your live location while you deliver an active order.',
+          locationAlwaysAndWhenInUsePermission: 'Allow Sipp Rider to share your location during an active delivery, including while navigation is open.',
+          locationWhenInUsePermission: 'Allow Sipp Rider to share your live location while you deliver an active order.',
         },
       ],
       [
@@ -88,7 +89,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: 'dd251847-b122-424b-b7dd-60bd8ddbbe90',
+        projectId: '54910e7e-fa72-4582-aec7-a45f203f5873',
       },
     },
   },
