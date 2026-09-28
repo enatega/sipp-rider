@@ -7,6 +7,8 @@ export type SocketSubscriptionCleanup = () => void;
 
 export type SocketReceivedMessage = {
   id?: string;
+  orderId?: string;
+  kind?: 'store_rider' | 'customer_rider';
   text?: string;
   sender?: string;
   receiver?: string;

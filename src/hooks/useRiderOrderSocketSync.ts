@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { AppState, type AppStateStatus } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { useAuth } from '../auth/AuthProvider';
-import { riderHomeKeys } from '../api/queryKeys';
+import { riderHomeKeys, supportChatKeys } from '../api/queryKeys';
 import type { RiderOrderDetail } from '../api/riderOrderDetailTypes';
 import {
   riderOrdersSocketClient,
@@ -110,10 +110,24 @@ export function useRiderOrderSocketSync() {
       },
     );
 
+    const unsubscribeChat = riderOrdersSocketClient.subscribeChatMessage(() => {
+      void queryClient.invalidateQueries({ queryKey: supportChatKeys.unread() });
+    });
+    const unsubscribeChatRead = riderOrdersSocketClient.subscribeOrderChatRead(() => {
+      void queryClient.invalidateQueries({ queryKey: supportChatKeys.unread() });
+    });
+    const unsubscribeNotifications = riderOrdersSocketClient.subscribeNotificationCreated(() => {
+      void queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
+    });
+
     return () => {
       unsubscribeOrderStatus();
       unsubscribeRiderStatus();
       unsubscribeRiderOrderAvailable();
+      unsubscribeChat();
+      unsubscribeChatRead();
+      unsubscribeNotifications();
     };
   }, [closeOffer, isAuthenticated, queryClient, receiveAssignment, receiveOffer, token]);
 
@@ -135,6 +149,10 @@ export function useRiderOrderSocketSync() {
       if (nextState === 'active') {
         riderOrdersSocketClient.connect();
         queryClient.invalidateQueries({ queryKey: riderHomeKeys.all });
+        queryClient.invalidateQueries({ queryKey: supportChatKeys.unread() });
+        queryClient.invalidateQueries({ queryKey: supportChatKeys.all });
+        queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
+        queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
       }
     });
 
@@ -143,6 +161,10 @@ export function useRiderOrderSocketSync() {
       if (!isReachable || appState !== 'active') return;
       riderOrdersSocketClient.connect();
       queryClient.invalidateQueries({ queryKey: riderHomeKeys.all });
+      queryClient.invalidateQueries({ queryKey: supportChatKeys.unread() });
+      queryClient.invalidateQueries({ queryKey: supportChatKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
     });
 
     return () => {

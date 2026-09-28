@@ -212,6 +212,24 @@ class RiderOrdersSocketClient {
     };
   }
 
+  subscribeChatMessage(handler: (payload: { orderId?: string }) => void) {
+    const socket = this.ensureSocket();
+    socket.on('receive-message', handler);
+    return () => socket.off('receive-message', handler);
+  }
+
+  subscribeNotificationCreated(handler: () => void) {
+    const socket = this.ensureSocket();
+    socket.on('notification-created', handler);
+    return () => socket.off('notification-created', handler);
+  }
+
+  subscribeOrderChatRead(handler: () => void) {
+    const socket = this.ensureSocket();
+    socket.on('order-chat-read', handler);
+    return () => socket.off('order-chat-read', handler);
+  }
+
   publishLocation(payload: RiderLocationUpdatePayload) {
     const socket = this.connect();
     if (!this.token) return false;

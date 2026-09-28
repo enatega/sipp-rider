@@ -53,12 +53,12 @@ export function useExpoPushToken() {
       const permissionResponse = await Notifications.getPermissionsAsync();
       let finalStatus = permissionResponse.status;
 
-      if (finalStatus !== 'granted') {
+      if (finalStatus !== 'granted' && permissionResponse.ios?.status !== Notifications.IosAuthorizationStatus.PROVISIONAL) {
         const requestedPermission = await Notifications.requestPermissionsAsync();
         finalStatus = requestedPermission.status;
       }
 
-      if (finalStatus !== 'granted') {
+      if (finalStatus !== 'granted' && (await Notifications.getPermissionsAsync()).ios?.status !== Notifications.IosAuthorizationStatus.PROVISIONAL) {
         throw new Error('Notification permission was not granted.');
       }
 
@@ -69,7 +69,6 @@ export function useExpoPushToken() {
       }
 
       const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-      console.log('[EXPO PUSH TOKEN][RIDER]', token);
       setExpoPushToken(token);
       return token;
     } catch (error) {

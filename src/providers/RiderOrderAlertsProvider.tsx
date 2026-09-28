@@ -14,6 +14,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { riderHomeKeys } from '../api/queryKeys';
 import type { RiderOrderAvailablePayload } from '../socket/riderOrdersSocket';
 import { newOrderBeepManager } from '../sound/newOrderBeep';
+import { queueOrderNotificationNavigation } from '../navigation/notificationNavigation';
 
 export type RiderOrderAlert =
   | ({ kind: 'offer'; expiresAt: number } & Omit<RiderOrderAvailablePayload, 'expiresAt'>)
@@ -194,6 +195,8 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
   useEffect(() => {
     const handleNotification = (notification: Notifications.Notification) => {
       const data = notification.request.content.data as Record<string, unknown>;
+      void queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
+      void queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
       if (data.type === 'zone_order_available') {
         const offer = notificationDataToOffer(data);
         if (offer) receiveOffer(offer);
@@ -215,18 +218,26 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
     const received = Notifications.addNotificationReceivedListener(handleNotification);
     const opened = Notifications.addNotificationResponseReceivedListener((response) => {
       handleNotification(response.notification);
+      const data = response.notification.request.content.data as Record<string, unknown>;
+      if (data.type !== 'zone_order_available' && data.assignmentType !== 'broadcast_claim') {
+        queueOrderNotificationNavigation(data.orderId);
+      }
     });
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return;
       handleNotification(response.notification);
+      const data = response.notification.request.content.data as Record<string, unknown>;
+      if (data.type !== 'zone_order_available' && data.assignmentType !== 'broadcast_claim') {
+        queueOrderNotificationNavigation(data.orderId);
+      }
       void Notifications.clearLastNotificationResponseAsync();
-    });
+    }).catch(() => undefined);
 
     return () => {
       received.remove();
       opened.remove();
     };
-  }, [closeOffer, receiveAssignment, receiveOffer]);
+  }, [closeOffer, queryClient, receiveAssignment, receiveOffer]);
 
   const value = useMemo<RiderOrderAlertsContextValue>(
     () => ({

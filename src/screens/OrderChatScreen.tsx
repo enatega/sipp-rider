@@ -22,6 +22,8 @@ import { useAuth } from '../auth/AuthProvider';
 import {
   useSendSupportChatMessageMutation,
   useSupportChatMessagesQuery,
+  useOrderChatSessionQuery,
+  useMarkOrderChatReadMutation,
 } from '../hooks/useSupportChat';
 import { SupportChatMessage, SupportChatMessagesResponse } from '../api/supportChatTypes';
 import { riderHomeKeys, supportChatKeys } from '../api/queryKeys';
@@ -54,12 +56,27 @@ export default function OrderChatScreen({ navigation, route }: Props) {
 
   const senderId = normalizeParticipantId(session.user?.id);
   const receiverId = normalizeParticipantId(route.params?.receiverId);
-  const [activeChatBoxId, setActiveChatBoxId] = useState<string | null>(route.params?.chatBoxId ?? null);
-  const title = route.params?.name?.trim() || t('order_chat_default_name');
+  const [activeChatBoxId, setActiveChatBoxId] = useState<string | null>(null);
+  const title = route.params?.name?.trim() || t(route.params.kind === 'store_rider' ? 'chat_store_name' : 'chat_customer_name');
+  const conversationLabel = t(route.params.kind === 'store_rider' ? 'chat_store_action' : 'chat_customer_action');
   const phone = route.params?.phone?.trim() || null;
 
   const messagesQuery = useSupportChatMessagesQuery(activeChatBoxId);
   const sendMessageMutation = useSendSupportChatMessageMutation(activeChatBoxId);
+  const orderChatQuery = useOrderChatSessionQuery(route.params.orderId, route.params.kind);
+  const markRead = useMarkOrderChatReadMutation();
+
+  useEffect(() => {
+    if (orderChatQuery.data?.chatBoxId) setActiveChatBoxId(orderChatQuery.data.chatBoxId);
+  }, [orderChatQuery.data?.chatBoxId]);
+
+  useEffect(() => {
+    if (!activeChatBoxId) return;
+    markRead.mutate({ orderId: route.params.orderId, kind: route.params.kind }, {
+      onSuccess: () => void queryClient.invalidateQueries({ queryKey: supportChatKeys.unread() }),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeChatBoxId, route.params.orderId, route.params.kind, messagesQuery.data]);
 
   const messages = useMemo(
     () => messagesQuery.data?.messages ?? [],
@@ -95,6 +112,7 @@ export default function OrderChatScreen({ navigation, route }: Props) {
       const incomingSender = normalizeParticipantId(socketMessage.senderId ?? socketMessage.sender);
       const incomingReceiver = normalizeParticipantId(socketMessage.receiverId ?? socketMessage.receiver);
 
+      if (socketMessage.orderId !== route.params.orderId || socketMessage.kind !== route.params.kind) return;
       if (!incomingText) return;
 
       if (activeChatBoxId && incomingChatBoxId && activeChatBoxId !== incomingChatBoxId) {
@@ -108,8 +126,12 @@ export default function OrderChatScreen({ navigation, route }: Props) {
         setActiveChatBoxId(incomingChatBoxId);
       }
 
+      if (!socketMessage.id) {
+        void messagesQuery.refetch();
+        return;
+      }
       const receivedMessage: SupportChatMessage = {
-        id: socketMessage.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        id: socketMessage.id,
         text: incomingText,
         senderId: incomingSender,
         receiverId: incomingReceiver,
@@ -143,35 +165,23 @@ export default function OrderChatScreen({ navigation, route }: Props) {
     const text = message.trim();
     if (!text) return;
 
-    console.log('[SUPPORT CHAT][SEND][INITIATED]', {
-      senderId,
-      receiverId,
-      text,
-      activeChatBoxId,
-    });
-
-    if (!senderId || !receiverId) {
-      console.log('[SUPPORT CHAT][SEND][SKIPPED]', {
-        reason: 'missing senderId or receiverId',
-        senderId,
-        receiverId,
-      });
+    if (!senderId) {
       setLocalError(t('chat_send_not_available'));
       return;
     }
 
     const payload = {
       senderId,
-      receiverId,
+      receiverId: receiverId ?? '',
       text,
+      orderId: route.params.orderId,
+      kind: route.params.kind,
     };
-    console.log('[SUPPORT CHAT][SEND][REQUEST]', payload);
     setLocalError(null);
     sendMessageMutation.mutate(
       payload,
       {
         onSuccess: (response) => {
-          console.log('[SUPPORT CHAT][SEND][SUCCESS]', response);
           const nextChatBoxId = response?.chatBoxId ?? activeChatBoxId;
           if (response?.chatBoxId && response.chatBoxId !== activeChatBoxId) {
             setActiveChatBoxId(response.chatBoxId);
@@ -182,7 +192,9 @@ export default function OrderChatScreen({ navigation, route }: Props) {
                 if (!current) return current;
                 return {
                   ...current,
-                  chatBoxId: response.chatBoxId ?? current.chatBoxId,
+                  ...(route.params.kind === 'store_rider'
+                    ? { chatBoxId: response.chatBoxId }
+                    : { customerRiderChatBoxId: response.chatBoxId }),
                 };
               },
             );
@@ -215,12 +227,7 @@ export default function OrderChatScreen({ navigation, route }: Props) {
           scrollToLatest(true);
         },
         onError: (error) => {
-          console.log('[SUPPORT CHAT][SEND][ERROR]', {
-            message: error.message,
-            status: error.status,
-            code: error.code,
-            data: error.data,
-          });
+          setLocalError(error.message);
         },
       },
     );
@@ -295,9 +302,16 @@ export default function OrderChatScreen({ navigation, route }: Props) {
             <Text weight="medium" style={styles.headerTitle} color={theme.colors.gray900}>
               {title}
             </Text>
+            <Text variant="caption" color={theme.colors.gray600}>{conversationLabel}</Text>
           </View>
-          <Pressable style={styles.callButton} onPress={() => void openDialer()} disabled={!phone}>
-            <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+          {phone ? (
+            <Pressable
+              style={styles.callButton}
+              onPress={() => void openDialer()}
+              accessibilityRole="button"
+              accessibilityLabel={t('call_customer_action')}
+            >
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
               <Path
                 d="M22 16.92V19.92C22.0011 20.1985 21.944 20.4742 21.8322 20.7293C21.7205 20.9844 21.5564 21.2132 21.35 21.4C21.1436 21.5868 20.8987 21.7275 20.6326 21.8137C20.3666 21.8999 20.0852 21.9297 19.806 21.901C16.7185 21.5651 13.7528 20.5101 11.151 18.821C8.73087 17.2833 6.67882 15.2312 5.141 12.811C3.44626 10.1977 2.39057 7.21885 2.061 4.11898C2.03237 3.84059 2.06202 3.55929 2.14815 3.29393C2.23428 3.02857 2.37495 2.78441 2.56162 2.57872C2.7483 2.37302 2.97681 2.20998 3.23145 2.09954C3.48608 1.9891 3.76124 1.93383 4.039 1.93698H7.039C7.5245 1.9322 7.99517 2.10488 8.36235 2.422C8.72954 2.73911 8.96716 3.17849 9.031 3.65998C9.15098 4.56995 9.37342 5.46343 9.695 6.32298C9.82977 6.68072 9.85957 7.06945 9.78088 7.4436C9.70219 7.81776 9.51819 8.16175 9.251 8.43498L7.981 9.70498C9.40456 12.2085 11.7915 14.5954 14.295 16.019L15.565 14.749C15.8382 14.4818 16.1822 14.2978 16.5564 14.2191C16.9305 14.1404 17.3193 14.1702 17.677 14.305C18.5366 14.6266 19.43 14.849 20.34 14.969C20.8267 15.0335 21.2709 15.276 21.5889 15.6518C21.907 16.0276 22.0773 16.5082 22.067 17.001L22 16.92Z"
                 stroke={theme.colors.gray900}
@@ -305,8 +319,9 @@ export default function OrderChatScreen({ navigation, route }: Props) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-            </Svg>
-          </Pressable>
+              </Svg>
+            </Pressable>
+          ) : <View style={styles.callButton} />}
         </View>
         <View style={styles.headerDividerWrap}>
           <View style={[styles.divider, { backgroundColor: theme.colors.gray300 }]} />

@@ -10,6 +10,9 @@ import { useTranslations } from '../localization/LocalizationProvider';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../api/apiClient';
+import { useRiderOrderChatUnreadQuery } from '../hooks/useSupportChat';
 
 const TAB_META = {
   HomeTab: { key: 'nav_home', Icon: HomeIcon },
@@ -22,6 +25,11 @@ export default function BottomTabBar({ state, navigation }: BottomTabBarProps) {
   const { t } = useTranslations('app');
   const { theme } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const chatUnread = useRiderOrderChatUnreadQuery();
+  const notificationUnread = useQuery({
+    queryKey: ['rider-notification-count'],
+    queryFn: () => apiClient.get<{ unreadCount: number }>('/apps/deliveries/users-notifications/count-unread'),
+  });
   const bottomInset = Platform.OS === 'android'
     ? insets.bottom + 10
     : insets.bottom + 6;
@@ -44,6 +52,8 @@ export default function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         const label = t(meta?.key ?? 'nav_home');
         const Icon = meta?.Icon ?? HomeIcon;
         const iconColor = focused ? theme.colors.primary : theme.colors.gray400;
+        const badgeCount = route.name === 'HomeTab' ? chatUnread.data?.total ?? 0
+          : route.name === 'ProfileTab' ? notificationUnread.data?.unreadCount ?? 0 : 0;
 
         const onPress = () => {
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
@@ -53,8 +63,11 @@ export default function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         };
 
         return (
-          <Pressable key={route.key} style={styles.tab} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={label}>
-            <View style={styles.iconWrap}><Icon color={iconColor} /></View>
+          <Pressable key={route.key} style={styles.tab} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={badgeCount ? `${label}, ${badgeCount} unread` : label}>
+            <View style={styles.iconWrap}>
+              <Icon color={iconColor} />
+              {badgeCount > 0 ? <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}><Text style={styles.badgeText}>{badgeCount > 99 ? '99+' : badgeCount}</Text></View> : null}
+            </View>
             <Text variant="caption" style={[styles.label, { color: iconColor }]}>{label}</Text>
           </Pressable>
         );
@@ -82,6 +95,8 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   iconWrap: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
+  badge: { position: 'absolute', right: -17, top: -9, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
+  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
   label: {
     fontSize: typography.size.xs,
     lineHeight: typography.lineHeight.xs,

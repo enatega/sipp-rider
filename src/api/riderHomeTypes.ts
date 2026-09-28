@@ -22,6 +22,8 @@ export type RiderHomeOrder = {
   riderStatusLabel: string | null;
   storeName: string | null;
   storeImage: string | null;
+  customerName: string | null;
+  customerImage: string | null;
   pickupAddress: string | null;
   deliveryAddress: string | null;
   orderAmount: number | null;

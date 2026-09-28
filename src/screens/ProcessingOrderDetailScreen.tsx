@@ -7,7 +7,7 @@ import Svg, { Path } from 'react-native-svg';
 import Map from '../components/Map';
 import Text from '../components/Text';
 import Button from '../components/Button';
-import ChatBubbleOvalIcon from '../assets/svgs/chat-bubble-oval.svg';
+import OrderConversationButton from '../components/OrderConversationButton';
 import PhoneIcon from '../assets/svgs/phone.svg';
 import { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
@@ -24,6 +24,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { RiderOrderUpdatableStatus } from '../api/riderHomeTypes';
 import type MapView from 'react-native-maps';
 import { useRiderLiveLocationTracking } from '../hooks/useRiderLiveLocationTracking';
+import { useRiderOrderChatUnreadQuery } from '../hooks/useSupportChat';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ProcessingOrderDetail'>;
 
@@ -81,7 +82,7 @@ const NEXT_UPDATE_STATUS: Partial<Record<RiderDeliveryProgressStatus, RiderOrder
 };
 
 const STATUS_BUTTON_LABEL_KEY: Record<RiderOrderUpdatableStatus, string> = {
-  heading_to_store: 'order_start_navigation',
+  heading_to_store: 'order_begin_trip_to_store',
   arrived_at_store: 'order_status_arrived_at_store',
   waiting_for_order: 'order_status_waiting_for_order',
   picked_up: 'order_status_picked_up',
@@ -113,6 +114,8 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const insets = useSafeAreaInsets();
   const { orderId } = route.params;
   const detailQuery = useRiderOrderDetailQuery(orderId, isFocused);
+  const chatUnreadQuery = useRiderOrderChatUnreadQuery();
+  const chatUnreadCounts = chatUnreadQuery.data?.byOrderAndKind?.[orderId];
   const updateStatusMutation = useUpdateRiderOrderStatusMutation(orderId);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(56);
@@ -229,25 +232,21 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     await Linking.openURL(`tel:${phone}`);
   };
 
-  const openChat = () => {
-    const isCustomerDeliveryChat = [
-      'picked_up',
-      'out_for_delivery',
-      'arrived',
-    ].includes(detailQuery.data?.status ?? '');
-
+  const openChat = (kind: 'store_rider' | 'customer_rider') => {
+    const isCustomerChat = kind === 'customer_rider';
     navigation.navigate('OrderChat', {
       orderId,
-      name: isCustomerDeliveryChat
-        ? detailQuery.data?.customerName?.trim() || t('order_chat_default_name')
-        : detailQuery.data?.storeName?.trim() || t('order_chat_default_name'),
-      phone: detailQuery.data?.customerPhone ?? null,
-      chatBoxId: isCustomerDeliveryChat
+      name: isCustomerChat
+        ? detailQuery.data?.customerName?.trim() || t('chat_customer_name')
+        : detailQuery.data?.storeName?.trim() || t('chat_store_name'),
+      phone: isCustomerChat ? detailQuery.data?.customerPhone ?? null : null,
+      chatBoxId: isCustomerChat
         ? detailQuery.data?.customerRiderChatBoxId ?? null
         : detailQuery.data?.chatBoxId ?? null,
-      receiverId: isCustomerDeliveryChat
+      receiverId: isCustomerChat
         ? detailQuery.data?.customerUserId ?? null
         : detailQuery.data?.storeUserId ?? null,
+      kind,
     });
   };
 
@@ -260,18 +259,27 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     serverOrderStatus === 'ready'
     && currentProgressStatus === RiderDeliveryProgressStatus.HEADING_TO_STORE;
   const nextUpdateStatus = serverAllowedNextUpdateStatus ?? fallbackNextUpdateStatus;
+  const canUpdateRiderTravelStatus =
+    (nextUpdateStatus === 'heading_to_store'
+      || nextUpdateStatus === 'arrived_at_store'
+      || nextUpdateStatus === 'waiting_for_order')
+    && ['accepted', 'preparing', 'ready', 'rider_assigned'].includes(serverOrderStatus ?? '');
   const nextTitle = t(getNextStatusTitleKey(currentProgressStatus, nextUpdateStatus));
   const step = STEP_VALUE[currentProgressStatus];
   const currentIndex = DELIVERY_PROGRESS_ORDER.indexOf(currentProgressStatus);
   const canUpdateStatus =
-    detailQuery.data?.canUpdateStatus === true || shouldAllowReadyFallback;
+    detailQuery.data?.canUpdateStatus === true || shouldAllowReadyFallback || canUpdateRiderTravelStatus;
   const isDelivered = currentProgressStatus === RiderDeliveryProgressStatus.DELIVERED;
+  const isAtStore =
+    currentProgressStatus === RiderDeliveryProgressStatus.ARRIVED_AT_STORE
+    || currentProgressStatus === RiderDeliveryProgressStatus.WAITING_FOR_ORDER;
+  const isStoreReadyForPickup = serverOrderStatus === 'ready';
   const showStorePreparingAlert =
-    currentProgressStatus === RiderDeliveryProgressStatus.ARRIVED_AT_STORE && !canUpdateStatus;
+    isAtStore && ['accepted', 'preparing', 'rider_assigned'].includes(serverOrderStatus ?? '');
   const waitingForStoreReadyToPickup =
     currentProgressStatus === RiderDeliveryProgressStatus.WAITING_FOR_ORDER
-    && serverOrderStatus !== 'picked_up';
-  const showReadyForPickupAlert = waitingForStoreReadyToPickup;
+    && !isStoreReadyForPickup;
+  const showReadyForPickupAlert = isAtStore && isStoreReadyForPickup;
   const primaryButtonLabel = waitingForStoreReadyToPickup
     ? t('order_waiting_for_order_disabled')
     : nextUpdateStatus
@@ -284,6 +292,10 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     || waitingForStoreReadyToPickup;
 
   const handlePrimaryAction = () => {
+    if (nextUpdateStatus === 'heading_to_store') {
+      if (canUpdateStatus) updateStatusMutation.mutate({ status: 'heading_to_store' });
+      return;
+    }
     if (waitingForStoreReadyToPickup || !canUpdateStatus) return;
 
     const serverRiderStatus = detailQuery.data?.riderStatus;
@@ -309,7 +321,6 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       return;
     }
 
-    void openNavigation();
   };
 
   const closeDeliveredModal = () => {
@@ -516,20 +527,33 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
             <Pressable
               onPress={() => void openDialer()}
               disabled={!detailQuery.data?.customerPhone}
+              accessibilityRole="button"
+              accessibilityLabel={t('call_customer_action')}
               style={[styles.roundAction, { borderColor: theme.colors.gray250, backgroundColor: theme.colors.white }]}
             >
               <PhoneIcon width={20} height={20} />
-            </Pressable>
-            <Pressable
-              onPress={openChat}
-              style={[styles.roundAction, { borderColor: theme.colors.gray250, backgroundColor: theme.colors.white }]}
-            >
-              <ChatBubbleOvalIcon width={20} height={20} />
             </Pressable>
           </View>
         </View>
 
         <View style={[styles.ctaWrap, { backgroundColor: theme.colors.gray100 }]}>
+          <View style={styles.conversationActions}>
+            <OrderConversationButton
+              kind="store_rider"
+              unreadCount={chatUnreadCounts?.store_rider ?? 0}
+              onPress={() => openChat('store_rider')}
+            />
+            <OrderConversationButton
+              kind="customer_rider"
+              unreadCount={chatUnreadCounts?.customer_rider ?? 0}
+              onPress={() => openChat('customer_rider')}
+            />
+          </View>
+          {isPrimaryActionDisabled && !updateStatusMutation.isPending && !waitingForStoreReadyToPickup && nextUpdateStatus ? (
+            <Text variant="label" color={theme.colors.gray600} style={{ textAlign: 'center', marginBottom: 8 }}>
+              {t('order_status_wait_for_store')}
+            </Text>
+          ) : null}
           <Button
             label={updateStatusMutation.isPending ? t('order_status_updating') : primaryButtonLabel}
             onPress={handlePrimaryAction}
@@ -851,6 +875,11 @@ const styles = StyleSheet.create({
   ctaWrap: {
     paddingHorizontal: 16,
     paddingVertical: 30,
+  },
+  conversationActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
   },
   primaryButton: {
     height: 54,

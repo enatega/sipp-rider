@@ -9,6 +9,7 @@ import { ThemeProvider, useAppTheme } from './src/theme/ThemeProvider';
 import QueryProvider from './src/providers/QueryProvider';
 import { LocalizationProvider } from './src/localization/LocalizationProvider';
 import { AuthProvider } from './src/auth/AuthProvider';
+import { usePushTokenSync } from './src/hooks/usePushTokenSync';
 import IncomingOrderAlert from './src/components/IncomingOrderAlert';
 import { RiderOrderAlertsProvider } from './src/providers/RiderOrderAlertsProvider';
 import './src/localization/i18n';
@@ -43,6 +44,7 @@ function getNavigationButtonStyle(backgroundColor: string) {
 
 function ThemedApp() {
   const { theme } = useAppTheme();
+  usePushTokenSync();
   const navigationBarColor = theme.colors.gray800;
 
   useEffect(() => {

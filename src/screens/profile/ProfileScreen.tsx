@@ -19,6 +19,8 @@ import ToggleSwitch from '../../components/ToggleSwitch';
 import { useRiderProfileQuery } from '../../hooks/useRiderProfileQuery';
 import { useLogoutMutation } from '../../hooks/useAuthMutations';
 import { MainStackParamList } from '../../navigation/types';
+import { useQuery } from '@tanstack/react-query';
+import apiClient from '../../api/apiClient';
 
 const profileBackground = require('../../assets/images/profileBackground.png');
 const rowIcons = {
@@ -41,6 +43,10 @@ export default function ProfileScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { data: profileData, isLoading: profileLoading } = useRiderProfileQuery();
   const logoutMutation = useLogoutMutation();
+  const notificationCount = useQuery({
+    queryKey: ['rider-notification-count'],
+    queryFn: () => apiClient.get<{ unreadCount: number }>('/apps/deliveries/users-notifications/count-unread'),
+  });
   const [availability, setAvailability] = useState(true);
 
   if (profileLoading) {
@@ -79,6 +85,13 @@ export default function ProfileScreen() {
   };
 
   const menuPrimary = [
+    {
+      key: 'notifications',
+      icon: 'list',
+      title: notificationCount.data?.unreadCount ? `${t('notifications_title')} (${notificationCount.data.unreadCount})` : t('notifications_title'),
+      subtitle: t('notifications_profile_subtitle'),
+      onPress: () => navigation.navigate('Notifications'),
+    },
     {
       key: 'language',
       icon: 'globe',

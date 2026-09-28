@@ -17,6 +17,30 @@ export function useSupportChatMessagesQuery(chatBoxId?: string | null) {
   });
 }
 
+export function useOrderChatSessionQuery(orderId: string, kind: 'store_rider' | 'customer_rider') {
+  return useQuery({
+    queryKey: supportChatKeys.order(orderId, kind),
+    queryFn: () => supportChatService.getOrderChat(orderId, kind),
+    enabled: Boolean(orderId),
+  });
+}
+
+export function useRiderOrderChatUnreadQuery() {
+  return useQuery({
+    queryKey: supportChatKeys.unread(),
+    queryFn: supportChatService.getOrderUnreadCounts,
+    staleTime: 10_000,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useMarkOrderChatReadMutation() {
+  return useMutation({
+    mutationFn: ({ orderId, kind }: { orderId: string; kind: 'store_rider' | 'customer_rider' }) =>
+      supportChatService.markOrderChatRead(orderId, kind),
+  });
+}
+
 export function useSendSupportChatMessageMutation(_chatBoxId?: string | null) {
   return useMutation<SendSupportChatMessageResponse, ApiError, SendSupportChatMessagePayload>({
     mutationFn: supportChatService.sendMessage,

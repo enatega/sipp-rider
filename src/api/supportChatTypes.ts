@@ -14,6 +14,8 @@ export type SendSupportChatMessagePayload = {
   senderId: string;
   receiverId: string;
   text: string;
+  orderId?: string;
+  kind?: 'store_rider' | 'customer_rider';
 };
 
 export type SendSupportChatMessageResponse = {

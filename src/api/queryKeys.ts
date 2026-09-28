@@ -64,5 +64,7 @@ export const appCurrencyKeys = {
 
 export const supportChatKeys = {
   all: ['supportChat'] as const,
+  unread: () => [...supportChatKeys.all, 'unread'] as const,
   messages: (chatBoxId: string) => [...supportChatKeys.all, 'messages', chatBoxId] as const,
+  order: (orderId: string, kind: string) => [...supportChatKeys.all, 'order', orderId, kind] as const,
 };

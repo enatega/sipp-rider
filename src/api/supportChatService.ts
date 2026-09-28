@@ -37,8 +37,8 @@ const normalizeMessage = (value: unknown): SupportChatMessage | null => {
       ?? asString(candidate.messageId)
       ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
     text,
-    senderId: asString(candidate.senderId) ?? asString(asRecord(candidate.sender)._id),
-    receiverId: asString(candidate.receiverId) ?? asString(asRecord(candidate.receiver)._id),
+    senderId: asString(candidate.senderId) ?? asString(candidate.sender_id) ?? asString(asRecord(candidate.sender).id),
+    receiverId: asString(candidate.receiverId) ?? asString(candidate.receiver_id) ?? asString(asRecord(candidate.receiver).id),
     createdAt: asString(candidate.createdAt) ?? asString(candidate.updatedAt),
   };
 };
@@ -62,6 +62,19 @@ const pickMessagesArray = (payload: unknown): unknown[] => {
 };
 
 export const supportChatService = {
+  getOrderUnreadCounts: () =>
+    apiClient.get<{
+      total: number;
+      byOrderId: Record<string, number>;
+      byOrderAndKind?: Record<string, { store_rider: number; customer_rider: number }>;
+    }>(`${SUPPORT_CHAT_BASE}/order-unread`),
+  getOrderChat: async (orderId: string, kind: 'store_rider' | 'customer_rider') => {
+    const response = await apiClient.get<{ chatBoxId: string | null }>(`${SUPPORT_CHAT_BASE}/order/${orderId}/${kind}`);
+    return response;
+  },
+  markOrderChatRead: async (orderId: string, kind: 'store_rider' | 'customer_rider') => {
+    return apiClient.patch<{ unreadCount: number }>(`${SUPPORT_CHAT_BASE}/order/${orderId}/${kind}/read`, {});
+  },
   getMessages: async (chatBoxId: string): Promise<SupportChatMessagesResponse> => {
     const response = await apiClient.get<unknown>(`${SUPPORT_CHAT_BASE}/messages/${chatBoxId}`);
     const messages = pickMessagesArray(response)
@@ -77,6 +90,12 @@ export const supportChatService = {
   },
 
   sendMessage: async (payload: SendSupportChatMessagePayload) => {
+    if (payload.orderId && payload.kind) {
+      return apiClient.post<SendSupportChatMessageResponse>(
+        `${SUPPORT_CHAT_BASE}/order/${payload.orderId}/${payload.kind}/send`,
+        { text: payload.text },
+      );
+    }
     return apiClient.post<SendSupportChatMessageResponse>(`${SUPPORT_CHAT_BASE}/send`, payload);
   },
 };
