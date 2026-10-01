@@ -54,25 +54,16 @@ if (!TaskManager.isTaskDefined(RIDER_LIVE_LOCATION_TASK)) {
 }
 
 export async function startRiderBackgroundLocation(orderId: string) {
-  await AsyncStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, orderId);
-
   const isAvailable = await TaskManager.isAvailableAsync();
   if (!isAvailable) return false;
 
   const foregroundPermission = await Location.getForegroundPermissionsAsync();
-  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) {
-    const requestedForegroundPermission =
-      await Location.requestForegroundPermissionsAsync();
-    if (
-      requestedForegroundPermission.status
-      !== Location.PermissionStatus.GRANTED
-    ) {
-      return false;
-    }
-  }
+  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) return false;
 
-  const permission = await Location.requestBackgroundPermissionsAsync();
+  const permission = await Location.getBackgroundPermissionsAsync();
   if (permission.status !== Location.PermissionStatus.GRANTED) return false;
+
+  await AsyncStorage.setItem(ACTIVE_ORDER_STORAGE_KEY, orderId);
 
   const isRegistered = await Location.hasStartedLocationUpdatesAsync(
     RIDER_LIVE_LOCATION_TASK,
@@ -97,6 +88,20 @@ export async function startRiderBackgroundLocation(orderId: string) {
   });
 
   return true;
+}
+
+export async function requestRiderDeliveryLocationPermissions() {
+  let foregroundPermission = await Location.getForegroundPermissionsAsync();
+  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) {
+    foregroundPermission = await Location.requestForegroundPermissionsAsync();
+  }
+  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) return false;
+
+  const backgroundPermission = await Location.getBackgroundPermissionsAsync();
+  if (backgroundPermission.status === Location.PermissionStatus.GRANTED) return true;
+
+  const requestedBackgroundPermission = await Location.requestBackgroundPermissionsAsync();
+  return requestedBackgroundPermission.status === Location.PermissionStatus.GRANTED;
 }
 
 export async function stopRiderBackgroundLocation() {

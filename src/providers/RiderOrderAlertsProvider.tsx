@@ -76,6 +76,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [alerts, setAlerts] = useState<RiderOrderAlert[]>([]);
+  const hasOffer = alerts.some((alert) => alert.kind === 'offer');
   const closedOfferIds = useRef(new Set<string>());
 
   const invalidateOrders = useCallback(() => {
@@ -171,9 +172,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
 
   useEffect(() => {
     const syncAlert = () => {
-      const hasActiveOffer =
-        AppState.currentState === 'active' &&
-        alerts.some((alert) => alert.kind === 'offer');
+      const hasActiveOffer = AppState.currentState === 'active' && hasOffer;
       if (hasActiveOffer) {
         void newOrderBeepManager.start();
         Vibration.vibrate([0, 500, 500], true);
@@ -190,7 +189,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       void newOrderBeepManager.stop();
       Vibration.cancel();
     };
-  }, [alerts]);
+  }, [hasOffer]);
 
   useEffect(() => {
     const handleNotification = (notification: Notifications.Notification) => {

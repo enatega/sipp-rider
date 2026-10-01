@@ -5,6 +5,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '../auth/AuthProvider';
 import apiClient from '../api/apiClient';
+import { ensureRiderNotificationChannels } from './useExpoPushToken';
 
 export function usePushTokenSync() {
   const { session } = useAuth();
@@ -16,6 +17,7 @@ export function usePushTokenSync() {
     let disposed = false;
     const sync = async () => {
       try {
+        await ensureRiderNotificationChannels();
         const permission = await Notifications.getPermissionsAsync();
         if (!permission.granted && permission.ios?.status !== Notifications.IosAuthorizationStatus.PROVISIONAL) return;
         const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;

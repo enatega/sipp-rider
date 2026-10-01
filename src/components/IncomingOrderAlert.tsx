@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, InteractionManager, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import Button from './Button';
 import Text from './Text';
 import {
@@ -11,6 +12,7 @@ import { useTranslations } from '../localization/LocalizationProvider';
 import { useRiderOrderAlerts } from '../providers/RiderOrderAlertsProvider';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { useAppCurrency } from '../hooks/useCurrency';
+import { notificationNavigationRef } from '../navigation/notificationNavigation';
 
 export default function IncomingOrderAlert() {
   const { theme } = useAppTheme();
@@ -42,7 +44,15 @@ export default function IncomingOrderAlert() {
   const accept = () => {
     if (!isOffer || acceptOffer.isPending) return;
     acceptOffer.mutate(currentAlert.orderId, {
-      onSuccess: () => closeOffer(currentAlert.orderId),
+      onSuccess: () => {
+        closeOffer(currentAlert.orderId);
+        const assignedOrder = { orderId: currentAlert.orderId, orderCode: currentAlert.orderCode, storeName: currentAlert.storeName };
+        InteractionManager.runAfterInteractions(() => {
+          if (notificationNavigationRef.isReady()) {
+            notificationNavigationRef.navigate('Home', { screen: 'HomeTab', params: { assignedOrder } });
+          }
+        });
+      },
       onError: (error) => {
         closeOffer(currentAlert.orderId);
         Alert.alert(
@@ -59,6 +69,27 @@ export default function IncomingOrderAlert() {
     declineOffer.mutate(currentAlert.orderId);
   };
 
+  const viewAssignment = () => {
+    if (!currentAlert || currentAlert.kind !== 'assignment') return;
+    const orderId = currentAlert.orderId;
+    dismissAssignment(orderId);
+    InteractionManager.runAfterInteractions(() => {
+      if (!notificationNavigationRef.isReady()) return;
+      notificationNavigationRef.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'processing' } });
+      notificationNavigationRef.navigate('ProcessingOrderDetail', { orderId });
+    });
+  };
+
+  const stayOnPickup = () => {
+    if (!currentAlert || currentAlert.kind !== 'assignment') return;
+    dismissAssignment(currentAlert.orderId);
+    InteractionManager.runAfterInteractions(() => {
+      if (notificationNavigationRef.isReady()) {
+        notificationNavigationRef.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'processing' } });
+      }
+    });
+  };
+
   return (
     <Modal transparent animationType="fade" visible statusBarTranslucent>
       <SafeAreaView
@@ -67,9 +98,12 @@ export default function IncomingOrderAlert() {
         <View
           style={[
             styles.card,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary },
+            { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow },
           ]}
         >
+          <View style={[styles.icon, { backgroundColor: theme.colors.sky100 }]}>
+            <Feather name={isOffer ? 'package' : 'check'} size={25} color={theme.colors.sky600} />
+          </View>
           <View style={styles.headerRow}>
             <Text weight="bold" style={[styles.title, { color: theme.colors.gray900 }]}>
               {isOffer ? t('offer_title') : t('manual_assignment_title')}
@@ -120,14 +154,17 @@ export default function IncomingOrderAlert() {
           ) : (
             <>
               <Text color={theme.colors.gray700}>
-                {currentAlert.storeName || t('manual_assignment_message')}
+                {t('manual_assignment_message', { store: currentAlert.storeName || t('chat_store_name') })}
               </Text>
               <Button
-                label={t('manual_assignment_dismiss')}
-                onPress={() => dismissAssignment(currentAlert.orderId)}
+                label={t('rider_flow_view_delivery')}
+                onPress={viewAssignment}
                 containerStyle={styles.fullButton}
                 textColor={theme.colors.gray900}
               />
+              <Pressable onPress={stayOnPickup} accessibilityRole="button" style={styles.laterButton}>
+                <Text weight="semiBold" color={theme.colors.gray600}>{t('rider_flow_stay_pickup')}</Text>
+              </Pressable>
             </>
           )}
         </View>
@@ -139,14 +176,25 @@ export default function IncomingOrderAlert() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   card: {
-    borderRadius: 18,
-    borderWidth: 2,
-    gap: 12,
-    padding: 20,
+    borderRadius: 20,
+    gap: 14,
+    padding: 22,
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerRow: {
     alignItems: 'center',
@@ -187,5 +235,10 @@ const styles = StyleSheet.create({
   },
   fullButton: {
     minHeight: 48,
+  },
+  laterButton: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -7,8 +7,10 @@ import {
   ScrollView,
   StyleSheet,
   TextInput as RNTextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Text } from '../components';
 import { useTranslations } from '../localization/LocalizationProvider';
@@ -20,6 +22,8 @@ import { layout } from '../theme/layout';
 export default function LoginScreen() {
   const { t } = useTranslations('app');
   const { theme } = useAppTheme();
+  const { height } = useWindowDimensions();
+  const compact = height < 740;
   const loginMutation = useLoginMutation();
   const { getExpoPushToken, isLoading: isFetchingExpoPushToken } = useExpoPushToken();
   const [email, setEmail] = useState('');
@@ -52,7 +56,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if (!validate()) return;
+    if (loginMutation.isPending || isFetchingExpoPushToken || !validate()) return;
 
     const devicePushToken = await getExpoPushToken();
 
@@ -63,74 +67,53 @@ export default function LoginScreen() {
     });
   };
 
-  const titleTextStyle = {
-    fontSize: theme.typography.size.xl,
-    lineHeight: theme.typography.lineHeight.xl,
-  };
-
-  const subtitleTextStyle = {
-    fontSize: theme.typography.size.sm,
-    lineHeight: theme.typography.lineHeight.sm,
-  };
-
   const inputTextStyle = {
     fontSize: theme.typography.size.md,
     lineHeight: theme.typography.lineHeight.md,
   };
 
-  const buttonTextStyle = {
-    fontSize: theme.typography.size.lg,
-    lineHeight: theme.typography.lineHeight.lg,
-  };
-
   return (
-    <KeyboardAvoidingView
-      style={[styles.flex, { backgroundColor: theme.colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <SafeAreaView style={[styles.flex, { backgroundColor: theme.colors.background }]} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, compact && styles.scrollContentCompact]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
+          <Text weight="bold" color={theme.colors.loginAccent} style={styles.brand}>{t('auth_brand_name')}</Text>
           <Image
-            source={require('../assets/images/bikeImage.png')}
-            style={styles.heroImage}
+            source={require('../assets/images/bikeImageBlue.png')}
+            style={[styles.heroImage, compact && styles.heroImageCompact]}
             resizeMode="contain"
           />
 
-          <View style={[styles.brandBadge, { backgroundColor: theme.colors.gray100, shadowColor: theme.colors.shadow }]}>
-            <ScooterIcon color={theme.colors.primary} size={layout.icon.xl} />
-          </View>
-
           <View style={styles.headingWrap}>
-            <View style={styles.titleRow}>
-              <Text weight="bold" color={theme.colors.gray900} style={[styles.titlePart, titleTextStyle]}>
-                Rider
-              </Text>
-              <Text weight="bold" color={theme.colors.primary} style={[styles.titlePart, titleTextStyle]}>
-                {' '}Login
-              </Text>
-            </View>
-            <Text weight="medium" color={theme.colors.gray600} style={[styles.subtitle, subtitleTextStyle]}>
-              Welcome back! Please login to continue
+            <Text weight="bold" color={theme.colors.gray900} style={styles.title}>
+              {t('auth_rider_title')}
+            </Text>
+            <Text color={theme.colors.gray600} style={styles.subtitle}>
+              {t('auth_rider_subtitle')}
             </Text>
           </View>
 
           <View style={styles.form}>
-            <View>
+            <View style={styles.field}>
+              <Text weight="semiBold" color={theme.colors.gray900} style={styles.fieldLabel}>{t('auth_email_placeholder')}</Text>
               <View
                 style={[
                   styles.inputWrap,
                   {
                     backgroundColor: theme.colors.white,
-                    borderColor: theme.colors.gray200,
-                    shadowColor: theme.colors.shadow,
+                    borderColor: emailError ? theme.colors.red500 : theme.colors.gray200,
                   },
                 ]}
               >
-                <EnvelopeIcon color={theme.colors.primary} size={layout.icon.xl} />
+                <EnvelopeIcon color={theme.colors.loginAccent} size={layout.icon.xl} />
                 <RNTextInput
                   value={email}
                   onChangeText={(v) => {
@@ -140,6 +123,8 @@ export default function LoginScreen() {
                   placeholder={t('auth_email_placeholder')}
                   placeholderTextColor={theme.colors.gray500}
                   keyboardType="email-address"
+                  autoComplete="email"
+                  textContentType="emailAddress"
                   autoCapitalize="none"
                   autoCorrect={false}
                   returnKeyType="next"
@@ -153,18 +138,18 @@ export default function LoginScreen() {
               ) : null}
             </View>
 
-            <View>
+            <View style={styles.field}>
+              <Text weight="semiBold" color={theme.colors.gray900} style={styles.fieldLabel}>{t('auth_password_placeholder')}</Text>
               <View
                 style={[
                   styles.inputWrap,
                   {
                     backgroundColor: theme.colors.white,
-                    borderColor: theme.colors.gray200,
-                    shadowColor: theme.colors.shadow,
+                    borderColor: passwordError ? theme.colors.red500 : theme.colors.gray200,
                   },
                 ]}
               >
-                <LockIcon color={theme.colors.primary} size={layout.icon.xl} />
+                <LockIcon color={theme.colors.loginAccent} size={layout.icon.xl} />
                 <RNTextInput
                   value={password}
                   onChangeText={(v) => {
@@ -173,12 +158,20 @@ export default function LoginScreen() {
                   }}
                   placeholder={t('auth_password_placeholder')}
                   placeholderTextColor={theme.colors.gray500}
+                  autoComplete="password"
+                  textContentType="password"
                   returnKeyType="done"
                   onSubmitEditing={handleLogin}
                   secureTextEntry={!passwordVisible}
                   style={[styles.input, { color: theme.colors.gray900 }, inputTextStyle]}
                 />
-                <Pressable onPress={() => setPasswordVisible((v) => !v)} hitSlop={8}>
+                <Pressable
+                  onPress={() => setPasswordVisible((v) => !v)}
+                  accessibilityRole="button"
+                  accessibilityLabel={passwordVisible ? t('auth_hide_password') : t('auth_show_password')}
+                  hitSlop={8}
+                  style={styles.eyeButton}
+                >
                   <EyeIcon visible={passwordVisible} color={theme.colors.gray500} size={layout.icon.lg} />
                 </Pressable>
               </View>
@@ -200,22 +193,23 @@ export default function LoginScreen() {
         <Pressable
           onPress={handleLogin}
           disabled={loginMutation.isPending || isFetchingExpoPushToken}
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.loginButton,
             {
-              backgroundColor: theme.colors.primary,
-              shadowColor: theme.colors.primary,
-              opacity: pressed ? 0.95 : 1,
+              backgroundColor: theme.colors.loginAccent,
+              opacity: pressed ? 0.86 : 1,
             },
             loginMutation.isPending || isFetchingExpoPushToken ? styles.disabled : null,
           ]}
         >
-          <Text weight="semiBold" color={theme.colors.white} style={[styles.loginButtonText, buttonTextStyle]}>
+          <Text weight="bold" color={theme.colors.gray900} style={styles.loginButtonText}>
             {loginMutation.isPending || isFetchingExpoPushToken ? t('auth_login_loading') : t('auth_login')}
           </Text>
         </Pressable>
       </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -224,89 +218,91 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    minHeight: '100%',
-    paddingHorizontal: layout.spacing.xl,
-    paddingTop: layout.spacing.md,
-    paddingBottom: layout.spacing.xxl,
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 30,
+  },
+  scrollContentCompact: {
+    paddingTop: 10,
+    paddingBottom: 18,
   },
   content: {
-    alignItems: 'center',
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
+  },
+  brand: {
+    fontSize: 25,
+    lineHeight: 32,
+    letterSpacing: -0.7,
   },
   heroImage: {
     width: '100%',
-    maxWidth: 520,
-    height: layout.control.heroHeight,
-    marginTop: layout.spacing.sm,
+    height: 205,
+    marginTop: 4,
   },
-  brandBadge: {
-    width: layout.control.badgeSize,
-    height: layout.control.badgeSize,
-    borderRadius: layout.radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowOffset: { width: 0, height: layout.shadow.softOffsetY },
-    shadowOpacity: layout.shadow.softOpacity,
-    shadowRadius: layout.shadow.softRadius,
-    elevation: 2,
+  heroImageCompact: {
+    height: 145,
   },
   headingWrap: {
-    alignItems: 'center',
-    marginTop: layout.spacing.md,
-    gap: layout.spacing.xs,
+    marginTop: 12,
+    gap: 6,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  titlePart: {
-    letterSpacing: -0.8,
+  title: {
+    fontSize: 30,
+    lineHeight: 37,
+    letterSpacing: -0.7,
   },
   subtitle: {
-    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
   },
   form: {
     width: '100%',
-    marginTop: layout.spacing.lg,
-    gap: layout.spacing.lg,
+    marginTop: 28,
+    gap: 18,
+  },
+  field: {
+    gap: 8,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   inputWrap: {
     minHeight: layout.control.inputMinHeight,
-    borderRadius: layout.radius.lg,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: layout.spacing.lg,
-    paddingVertical: layout.spacing.sm,
-    gap: layout.spacing.sm,
-    shadowOffset: { width: 0, height: layout.shadow.softOffsetY },
-    shadowOpacity: layout.shadow.softOpacity,
-    shadowRadius: layout.shadow.softRadius,
-    elevation: 2,
+    paddingHorizontal: 16,
+    gap: 12,
   },
   input: {
     flex: 1,
-    minHeight: 20,
+    minHeight: 52,
     paddingVertical: 0,
   },
+  eyeButton: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
   errorText: {
     marginTop: layout.spacing.xs,
   },
   loginButton: {
+    width: '100%',
+    maxWidth: 460,
+    alignSelf: 'center',
     minHeight: layout.control.buttonMinHeight,
-    borderRadius: layout.radius.pill,
-    marginTop: layout.spacing.xl,
-    marginBottom: layout.spacing.sm,
-    overflow: 'hidden',
+    borderRadius: 14,
+    marginTop: 26,
+    marginBottom: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: { width: 0, height: layout.shadow.glowOffsetY },
-    shadowOpacity: layout.shadow.glowOpacity,
-    shadowRadius: layout.shadow.glowRadius,
-    elevation: 8,
-    position: 'relative',
   },
   loginButtonText: {
     textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 22,
   },
   disabled: {
     opacity: 0.55,
@@ -328,17 +324,6 @@ function LockIcon({ color, size }: { color: string; size: number }) {
       <Path d="M7 11V8a5 5 0 1 1 10 0v3" stroke={color} strokeWidth={2} strokeLinecap="round" />
       <Path d="M6.5 11h11A1.5 1.5 0 0 1 19 12.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-7A1.5 1.5 0 0 1 6.5 11Z" stroke={color} strokeWidth={2} />
       <Path d="M12 15.5v2.5" stroke={color} strokeWidth={2} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function ScooterIcon({ color, size }: { color: string; size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M5 16.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Zm12 0a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" stroke={color} strokeWidth={1.8} />
-      <Path d="M7.5 19h7.8l2.2-4.5H14l-2-5H9.5" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M11.8 8.2h2.6l1.8 4.3" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
-      <Path d="M6 19h2.6m8.8 0h-1.8" stroke={color} strokeWidth={1.8} strokeLinecap="round" />
     </Svg>
   );
 }

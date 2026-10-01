@@ -17,7 +17,11 @@ import Button from './Button';
 import OrderConversationButton from './OrderConversationButton';
 import Text from './Text';
 
-type Props = { order: RiderHomeOrder; tab: RiderOrderTab };
+type Props = {
+  order: RiderHomeOrder;
+  tab: RiderOrderTab;
+  onAssigned: (order: { orderId: string; orderCode: string; storeName: string | null }) => void;
+};
 type ContactKind = 'store_rider' | 'customer_rider';
 
 function statusTone(colors: ThemeColors, status: string) {
@@ -37,7 +41,7 @@ function usableImage(image: string | null) {
   return image && !/placehold\.co|placeholder/i.test(image) ? image : null;
 }
 
-export default function HomeOrderCard({ order, tab }: Props) {
+export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const { formatCurrency } = useAppCurrency();
@@ -71,13 +75,16 @@ export default function HomeOrderCard({ order, tab }: Props) {
       chatBoxId: null,
     });
   };
-  const assignOrder = () => {
-    if (tab !== 'new' || !order.orderId) return;
+  const assignOrder = async () => {
+    const orderId = order.orderId;
+    if (tab !== 'new' || !orderId) return;
     assignOrderMutation.reset();
-    assignOrderMutation.mutate(order.orderId, {
-      onSuccess: () => setAssignError(''),
-      onError: (error) => setAssignError(error.message || t('order_assign_failed_fallback')),
-    });
+    try {
+      await assignOrderMutation.mutateAsync(orderId);
+      onAssigned({ orderId, orderCode: code, storeName: order.storeName });
+    } catch (error) {
+      setAssignError(error instanceof Error ? error.message : t('order_assign_failed_fallback'));
+    }
   };
 
   return (

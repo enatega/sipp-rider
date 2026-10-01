@@ -12,6 +12,7 @@ type Options = {
   customerUserId?: string | null;
   enabled: boolean;
   orderId: string;
+  stopWhenDisabled: boolean;
 };
 
 const MIN_UPDATE_DISTANCE_METERS = 15;
@@ -21,6 +22,7 @@ export function useRiderLiveLocationTracking({
   customerUserId,
   enabled,
   orderId,
+  stopWhenDisabled,
 }: Options) {
   const { session } = useAuth();
   const riderUserId = session.user?.id ?? null;
@@ -29,9 +31,11 @@ export function useRiderLiveLocationTracking({
 
   useEffect(() => {
     if (!enabled || !orderId || !session.token) {
-      void stopRiderBackgroundLocation().catch((error) => {
-        console.warn('[rider][location] unable to stop background tracking', error);
-      });
+      if (stopWhenDisabled || !session.token) {
+        void stopRiderBackgroundLocation().catch((error) => {
+          console.warn('[rider][location] unable to stop background tracking', error);
+        });
+      }
       return;
     }
 
@@ -40,7 +44,7 @@ export function useRiderLiveLocationTracking({
       // is declined or unavailable in the current build.
       console.warn('[rider][location] background tracking unavailable', error);
     });
-  }, [enabled, orderId, session.token]);
+  }, [enabled, orderId, session.token, stopWhenDisabled]);
 
   useEffect(() => {
     if (!enabled || !customerUserId || !riderUserId || !session.token) {
@@ -76,7 +80,7 @@ export function useRiderLiveLocationTracking({
     };
 
     const startTracking = async () => {
-      const permission = await Location.requestForegroundPermissionsAsync();
+      const permission = await Location.getForegroundPermissionsAsync();
       if (permission.status !== Location.PermissionStatus.GRANTED || isCancelled) return;
 
       const lastKnownLocation = await Location.getLastKnownPositionAsync({

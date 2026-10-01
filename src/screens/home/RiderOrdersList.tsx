@@ -12,9 +12,10 @@ import { riderHomeKeys } from '../../api/queryKeys';
 
 type Props = {
   tab: RiderOrderTab;
+  onAssigned: (order: { orderId: string; orderCode: string; storeName: string | null }) => void;
 };
 
-export default function RiderOrdersList({ tab }: Props) {
+export default function RiderOrdersList({ tab, onAssigned }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const queryClient = useQueryClient();
@@ -64,7 +65,7 @@ export default function RiderOrdersList({ tab }: Props) {
       data={items}
       keyExtractor={(item, index) => item.orderId ?? item.orderCode ?? `order-${index}`}
       contentContainerStyle={styles.listContent}
-      renderItem={({ item }) => <HomeOrderCard order={item} tab={tab} />}
+      renderItem={({ item }) => <HomeOrderCard order={item} tab={tab} onAssigned={onAssigned} />}
       refreshing={isRefreshing}
       onRefresh={handleRefresh}
       onEndReachedThreshold={0.4}

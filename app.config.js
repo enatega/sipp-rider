@@ -66,7 +66,10 @@ module.exports = {
       policy: 'appVersion',
     },
     plugins: [
-      'expo-notifications',
+      [
+        'expo-notifications',
+        { sounds: ['./assets/sound/beep3.mp3'] },
+      ],
       'expo-secure-store',
       [
         'expo-location',

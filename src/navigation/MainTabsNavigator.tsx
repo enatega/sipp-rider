@@ -7,7 +7,11 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import BottomTabBar from '../components/BottomTabBar';
 
 export type RiderTabParamList = {
-  HomeTab: undefined;
+  HomeTab: {
+    assignedOrder?: { orderId: string; orderCode: string; storeName: string | null };
+    completedOrder?: { orderCode: string };
+    preferredTab?: 'new' | 'processing' | 'delivered';
+  } | undefined;
   WalletTab: undefined;
   EarningsTab: undefined;
   ProfileTab: undefined;

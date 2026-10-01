@@ -8,6 +8,7 @@ import Map from '../components/Map';
 import Text from '../components/Text';
 import Button from '../components/Button';
 import OrderConversationButton from '../components/OrderConversationButton';
+import OrderFlowNotice from '../components/OrderFlowNotice';
 import PhoneIcon from '../assets/svgs/phone.svg';
 import { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
@@ -24,6 +25,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { RiderOrderUpdatableStatus } from '../api/riderHomeTypes';
 import type MapView from 'react-native-maps';
 import { useRiderLiveLocationTracking } from '../hooks/useRiderLiveLocationTracking';
+import { requestRiderDeliveryLocationPermissions } from '../location/riderBackgroundLocationTask';
 import { useRiderOrderChatUnreadQuery } from '../hooks/useSupportChat';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ProcessingOrderDetail'>;
@@ -92,6 +94,28 @@ const STATUS_BUTTON_LABEL_KEY: Record<RiderOrderUpdatableStatus, string> = {
   failed: 'order_status_failed',
 };
 
+const STATUS_NOTICE_MESSAGE_KEY: Record<RiderOrderUpdatableStatus, string> = {
+  heading_to_store: 'rider_flow_heading_message',
+  arrived_at_store: 'rider_flow_arrived_store_message',
+  waiting_for_order: 'rider_flow_waiting_message',
+  picked_up: 'rider_flow_picked_up_message',
+  out_for_delivery: 'rider_flow_out_for_delivery_message',
+  arrived: 'rider_flow_arrived_customer_message',
+  delivered: 'rider_flow_delivered_message',
+  failed: 'rider_flow_failed_message',
+};
+
+const STATUS_NOTICE_TITLE_KEY: Record<RiderOrderUpdatableStatus, string> = {
+  heading_to_store: 'order_status_heading_to_store',
+  arrived_at_store: 'order_status_arrived_at_store',
+  waiting_for_order: 'order_status_waiting_for_order',
+  picked_up: 'order_status_picked_up',
+  out_for_delivery: 'order_status_out_for_delivery',
+  arrived: 'order_status_arrived_at_customer',
+  delivered: 'order_status_delivered',
+  failed: 'order_status_failed',
+};
+
 function isRiderOrderUpdatableStatus(value: string): value is RiderOrderUpdatableStatus {
   return value in STATUS_BUTTON_LABEL_KEY;
 }
@@ -117,6 +141,8 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const chatUnreadQuery = useRiderOrderChatUnreadQuery();
   const chatUnreadCounts = chatUnreadQuery.data?.byOrderAndKind?.[orderId];
   const updateStatusMutation = useUpdateRiderOrderStatusMutation(orderId);
+  const [statusNotice, setStatusNotice] = useState<RiderOrderUpdatableStatus | null>(null);
+  const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(56);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -166,6 +192,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     customerUserId: detailQuery.data?.customerUserId,
     enabled: isLiveTrackingStatus,
     orderId,
+    stopWhenDisabled: Boolean(detailQuery.data?.status) && !isLiveTrackingStatus,
   });
   const pickupCoordinate = useMemo(
     () => toCoordinate(detailQuery.data?.pickupLatitude, detailQuery.data?.pickupLongitude),
@@ -287,13 +314,16 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       : t('order_start_navigation');
   const isPrimaryActionDisabled =
     updateStatusMutation.isPending
+    || isRequestingLocationPermission
     || !canUpdateStatus
     || !nextUpdateStatus
     || waitingForStoreReadyToPickup;
 
-  const handlePrimaryAction = () => {
+  const handlePrimaryAction = async () => {
     if (nextUpdateStatus === 'heading_to_store') {
-      if (canUpdateStatus) updateStatusMutation.mutate({ status: 'heading_to_store' });
+      if (canUpdateStatus) updateStatusMutation.mutate({ status: 'heading_to_store' }, {
+        onSuccess: () => setStatusNotice('heading_to_store'),
+      });
       return;
     }
     if (waitingForStoreReadyToPickup || !canUpdateStatus) return;
@@ -307,9 +337,30 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
         return;
       }
 
+      if (nextUpdateStatus === 'picked_up' || nextUpdateStatus === 'out_for_delivery') {
+        setIsRequestingLocationPermission(true);
+        try {
+          await requestRiderDeliveryLocationPermissions();
+        } catch (error) {
+          console.warn('[rider][location] delivery permission request unavailable', error);
+        } finally {
+          setIsRequestingLocationPermission(false);
+        }
+      }
+
       updateStatusMutation.mutate(
         { status: nextUpdateStatus },
         {
+          onSuccess: () => {
+            if (nextUpdateStatus === 'delivered') {
+              navigation.navigate('Home', {
+                screen: 'HomeTab',
+                params: { completedOrder: { orderCode: detailQuery.data?.orderCode ?? '' } },
+              });
+            } else {
+              setStatusNotice(nextUpdateStatus);
+            }
+          },
           onError: (error) => {
             // If backend says transition is invalid (already moved), refresh state and continue.
             if (error.status === 400 && error.message.toLowerCase().includes('invalid status transition')) {
@@ -324,7 +375,11 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   };
 
   const closeDeliveredModal = () => {
-    navigation.goBack();
+    navigation.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'delivered' } });
+  };
+
+  const findNextOrder = () => {
+    navigation.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'new' } });
   };
 
   return (
@@ -567,40 +622,19 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
         </View>
       </View>
 
-      {isDelivered ? (
-        <View style={[styles.modalOverlay, { backgroundColor: theme.colors.modalBackdrop }]}>
-          <View style={[styles.successCard, { backgroundColor: theme.colors.white, shadowColor: theme.colors.shadow }]}>
-            <Text style={styles.emoji}>🎉</Text>
-            <Text variant="title" weight="semiBold" color={theme.colors.gray900} style={styles.centerText}>
-              {t('order_well_done_rider')}
-            </Text>
-            <Text variant="label" color={theme.colors.gray600} style={styles.centerText}>
-              {t('order_delivered_message', { code: detailQuery.data?.orderCode ?? '—' })}
-            </Text>
-          </View>
-
-          <View
-            style={[
-              styles.modalBottom,
-              {
-                backgroundColor: theme.colors.white,
-                paddingBottom: Math.max(insets.bottom, 12) + 12,
-              },
-            ]}
-          >
-            <Text variant="subtitle" color={theme.colors.gray600} style={styles.centerText}>{t('order_ready_next_job')}</Text>
-            <Button
-              label={t('order_pick_next_order')}
-              onPress={closeDeliveredModal}
-              containerStyle={styles.primaryButton}
-              textColor={theme.colors.gray900}
-            />
-            <Pressable onPress={closeDeliveredModal} style={[styles.outlineBtn, { borderColor: theme.colors.gray900 }]}>
-              <Text variant="subtitle" weight="medium" color={theme.colors.gray900}>{t('order_done_for_today')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : null}
+      <OrderFlowNotice
+        visible={isDelivered || Boolean(statusNotice)}
+        tone={statusNotice === 'failed' ? 'error' : 'success'}
+        orderCode={detailQuery.data?.orderCode ?? undefined}
+        title={isDelivered ? t('order_well_done_rider') : statusNotice ? t(STATUS_NOTICE_TITLE_KEY[statusNotice]) : ''}
+        message={isDelivered
+          ? t('order_delivered_message', { code: detailQuery.data?.orderCode ?? '—' })
+          : statusNotice ? t(STATUS_NOTICE_MESSAGE_KEY[statusNotice]) : ''}
+        actionLabel={isDelivered ? t('rider_flow_view_completed') : t('rider_flow_continue')}
+        closeLabel={isDelivered ? t('order_pick_next_order') : undefined}
+        onAction={isDelivered ? closeDeliveredModal : () => setStatusNotice(null)}
+        onClose={isDelivered ? findNextOrder : () => setStatusNotice(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -884,50 +918,5 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 54,
     borderRadius: 40,
-  },
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  successCard: {
-    width: '88%',
-    maxWidth: 360,
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    alignItems: 'center',
-    gap: 6,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  emoji: {
-    fontSize: 44,
-    lineHeight: 52,
-  },
-  modalBottom: {
-    width: '100%',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 24,
-    gap: 14,
-  },
-  outlineBtn: {
-    height: 54,
-    borderRadius: 40,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerText: {
-    textAlign: 'center',
   },
 });
