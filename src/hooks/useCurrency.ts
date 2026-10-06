@@ -4,8 +4,8 @@ import type { ApiError } from '../api/apiClient';
 import { currencyService } from '../api/currencyService';
 import { appCurrencyKeys } from '../api/queryKeys';
 
-const FALLBACK_CURRENCY_CODE = 'USD';
-const FALLBACK_CURRENCY_SYMBOL = '$';
+const FALLBACK_CURRENCY_CODE = 'CRC';
+const FALLBACK_CURRENCY_SYMBOL = '₡';
 
 export function useAppCurrency() {
   const query = useQuery({
@@ -15,19 +15,32 @@ export function useAppCurrency() {
   });
 
   const code = query.data?.code || FALLBACK_CURRENCY_CODE;
-  const symbol = query.data?.symbol || FALLBACK_CURRENCY_SYMBOL;
+  const configuredSymbol = query.data?.symbol?.trim();
+  let symbol = configuredSymbol && configuredSymbol.toUpperCase() !== code.toUpperCase()
+    ? configuredSymbol === '¡' ? '₡' : configuredSymbol
+    : FALLBACK_CURRENCY_SYMBOL;
+  if (!configuredSymbol || configuredSymbol.toUpperCase() === code.toUpperCase()) {
+    if (code.toUpperCase() !== 'CRC') {
+      try {
+        const resolved = new Intl.NumberFormat('en', {
+          style: 'currency', currency: code, currencyDisplay: 'narrowSymbol',
+        }).formatToParts(0).find((part) => part.type === 'currency')?.value;
+        symbol = resolved && resolved.toUpperCase() !== code.toUpperCase() ? resolved : '¤';
+      } catch {
+        symbol = '¤';
+      }
+    }
+  }
 
   const formatter = useMemo(
     () =>
       new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: code,
         maximumFractionDigits: 0,
       }),
-    [code]
+    []
   );
 
-  const formatCurrency = (amount: number) => formatter.format(amount);
+  const formatCurrency = (amount: number) => `${symbol}${formatter.format(amount)}`;
 
   return {
     ...query,
@@ -38,4 +51,3 @@ export function useAppCurrency() {
 }
 
 export type AppCurrencyQueryError = ApiError;
-

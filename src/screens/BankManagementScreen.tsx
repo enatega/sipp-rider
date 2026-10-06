@@ -15,6 +15,7 @@ import { useTranslations } from '../localization/LocalizationProvider';
 import { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { UpdateBankDetailsPayload } from '../api/bankDetailsTypes';
+import { useAppCurrency } from '../hooks/useCurrency';
 
 type BankFormState = UpdateBankDetailsPayload;
 type BankFormErrors = Partial<Record<keyof BankFormState, string>>;
@@ -22,6 +23,7 @@ type BankFormErrors = Partial<Record<keyof BankFormState, string>>;
 export default function BankManagementScreen() {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
+  const { code: activeCurrencyCode } = useAppCurrency();
   const sidebar = useSidebar();
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const bankDetailsQuery = useBankDetailsQuery();
@@ -32,7 +34,7 @@ export default function BankManagementScreen() {
     accountTitle: '',
     accountNumber: '',
     iban: '',
-    currency: 'USD',
+    currency: '',
     accountCode: '',
   });
   const [errors, setErrors] = useState<BankFormErrors>({});
@@ -76,7 +78,7 @@ export default function BankManagementScreen() {
         accountTitle: form.accountTitle.trim(),
         accountNumber: form.accountNumber.trim(),
         iban: form.iban.trim(),
-        currency: form.currency.trim() || bankDetails?.currency || 'USD',
+        currency: form.currency.trim() || bankDetails?.currency || activeCurrencyCode,
         accountCode: form.accountCode.trim(),
       });
       setSuccessMessage(response.message);

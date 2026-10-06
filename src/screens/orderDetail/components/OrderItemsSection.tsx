@@ -5,6 +5,7 @@ import Text from '../../../components/Text';
 import { RiderOrderDetail } from '../../../api/riderOrderDetailTypes';
 import { useAppTheme } from '../../../theme/ThemeProvider';
 import { useTranslations } from '../../../localization/LocalizationProvider';
+import { useAppCurrency } from '../../../hooks/useCurrency';
 
 type Props = {
   order: RiderOrderDetail;
@@ -13,6 +14,7 @@ type Props = {
 export default function OrderItemsSection({ order }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
+  const { formatCurrency } = useAppCurrency();
   const [expanded, setExpanded] = useState(false);
 
   const total = useMemo(
@@ -49,14 +51,14 @@ export default function OrderItemsSection({ order }: Props) {
                     <Text variant="caption" weight="semiBold" color={theme.colors.gray900}>x{Number(item.quantity ?? 0)}</Text>
                   </View>
                 </View>
-                <Text variant="caption" weight="semiBold" color={theme.colors.gray900}>${Number(item.unitPrice ?? 0).toFixed(0)}</Text>
+                <Text variant="caption" weight="semiBold" color={theme.colors.gray900}>{formatCurrency(Number(item.unitPrice ?? 0))}</Text>
               </View>
             ))}
           </View>
 
           <View style={[styles.totalRow, { borderTopColor: theme.colors.gray200 }]}> 
             <Text weight="semiBold" color={theme.colors.gray900}>{t('order_total')}</Text>
-            <Text weight="semiBold" color={theme.colors.gray900}>${total.toFixed(0)}</Text>
+            <Text weight="semiBold" color={theme.colors.gray900}>{formatCurrency(total)}</Text>
           </View>
         </>
       ) : null}
