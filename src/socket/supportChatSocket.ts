@@ -10,6 +10,7 @@ export type SocketReceivedMessage = {
   orderId?: string;
   kind?: 'store_rider' | 'customer_rider';
   text?: string;
+  attachmentUrls?: string[];
   sender?: string;
   receiver?: string;
   senderId?: string;

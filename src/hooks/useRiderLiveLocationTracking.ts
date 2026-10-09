@@ -13,6 +13,7 @@ type Options = {
   enabled: boolean;
   orderId: string;
   stopWhenDisabled: boolean;
+  permissionRevision?: number;
 };
 
 const MIN_UPDATE_DISTANCE_METERS = 15;
@@ -23,6 +24,7 @@ export function useRiderLiveLocationTracking({
   enabled,
   orderId,
   stopWhenDisabled,
+  permissionRevision,
 }: Options) {
   const { session } = useAuth();
   const riderUserId = session.user?.id ?? null;
@@ -44,7 +46,7 @@ export function useRiderLiveLocationTracking({
       // is declined or unavailable in the current build.
       console.warn('[rider][location] background tracking unavailable', error);
     });
-  }, [enabled, orderId, session.token, stopWhenDisabled]);
+  }, [enabled, orderId, permissionRevision, session.token, stopWhenDisabled]);
 
   useEffect(() => {
     if (!enabled || !customerUserId || !riderUserId || !session.token) {
@@ -107,7 +109,7 @@ export function useRiderLiveLocationTracking({
       isCancelled = true;
       subscription?.remove();
     };
-  }, [customerUserId, enabled, orderId, riderUserId, session.token]);
+  }, [customerUserId, enabled, orderId, permissionRevision, riderUserId, session.token]);
 
   return location;
 }

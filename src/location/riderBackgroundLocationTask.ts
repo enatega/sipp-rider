@@ -93,15 +93,34 @@ export async function startRiderBackgroundLocation(orderId: string) {
 export async function requestRiderDeliveryLocationPermissions() {
   let foregroundPermission = await Location.getForegroundPermissionsAsync();
   if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) {
-    foregroundPermission = await Location.requestForegroundPermissionsAsync();
+    if (foregroundPermission.canAskAgain) {
+      foregroundPermission = await Location.requestForegroundPermissionsAsync();
+    }
   }
-  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) return false;
+  if (foregroundPermission.status !== Location.PermissionStatus.GRANTED) {
+    return { granted: false as const, canAskAgain: foregroundPermission.canAskAgain, level: 'foreground' as const };
+  }
 
-  const backgroundPermission = await Location.getBackgroundPermissionsAsync();
-  if (backgroundPermission.status === Location.PermissionStatus.GRANTED) return true;
+  let backgroundPermission = await Location.getBackgroundPermissionsAsync();
+  if (backgroundPermission.status === Location.PermissionStatus.GRANTED) return { granted: true as const };
 
-  const requestedBackgroundPermission = await Location.requestBackgroundPermissionsAsync();
-  return requestedBackgroundPermission.status === Location.PermissionStatus.GRANTED;
+  if (backgroundPermission.canAskAgain) {
+    backgroundPermission = await Location.requestBackgroundPermissionsAsync();
+  }
+  return backgroundPermission.status === Location.PermissionStatus.GRANTED
+    ? { granted: true as const }
+    : { granted: false as const, canAskAgain: backgroundPermission.canAskAgain, level: 'background' as const };
+}
+
+export async function getRiderDeliveryLocationPermissionStatus() {
+  const foreground = await Location.getForegroundPermissionsAsync();
+  if (foreground.status !== Location.PermissionStatus.GRANTED) {
+    return { granted: false as const, canAskAgain: foreground.canAskAgain, level: 'foreground' as const };
+  }
+  const background = await Location.getBackgroundPermissionsAsync();
+  return background.status === Location.PermissionStatus.GRANTED
+    ? { granted: true as const }
+    : { granted: false as const, canAskAgain: background.canAskAgain, level: 'background' as const };
 }
 
 export async function stopRiderBackgroundLocation() {

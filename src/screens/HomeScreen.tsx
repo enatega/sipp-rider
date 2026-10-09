@@ -67,7 +67,7 @@ export default function HomeScreen() {
   const filterTabs: HomeFilter[] = ['new', 'processing', 'delivered'];
   const summary = summaryQuery.data;
   const filterLabelMap: Record<HomeFilter, string> = {
-    new: t('orders_ready'),
+    new: t('orders_new'),
     processing: t('orders_pickup'),
     delivered: t('orders_completed'),
   };

@@ -2,6 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ApiError } from '../api/apiClient';
 import { supportChatKeys } from '../api/queryKeys';
 import { supportChatService } from '../api/supportChatService';
+import type { OrderChatPhoto } from '../api/supportChatTypes';
 import {
   SendSupportChatMessagePayload,
   SendSupportChatMessageResponse,
@@ -44,5 +45,15 @@ export function useMarkOrderChatReadMutation() {
 export function useSendSupportChatMessageMutation(_chatBoxId?: string | null) {
   return useMutation<SendSupportChatMessageResponse, ApiError, SendSupportChatMessagePayload>({
     mutationFn: supportChatService.sendMessage,
+  });
+}
+
+export function useUploadOrderChatPhotoMutation() {
+  return useMutation({
+    mutationFn: ({ orderId, kind, photo }: {
+      orderId: string;
+      kind: 'store_rider' | 'customer_rider';
+      photo: OrderChatPhoto;
+    }) => supportChatService.uploadOrderPhoto(orderId, kind, photo),
   });
 }

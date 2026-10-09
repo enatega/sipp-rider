@@ -25,7 +25,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { RiderOrderUpdatableStatus } from '../api/riderHomeTypes';
 import type MapView from 'react-native-maps';
 import { useRiderLiveLocationTracking } from '../hooks/useRiderLiveLocationTracking';
-import { requestRiderDeliveryLocationPermissions } from '../location/riderBackgroundLocationTask';
+import { getRiderDeliveryLocationPermissionStatus, requestRiderDeliveryLocationPermissions } from '../location/riderBackgroundLocationTask';
 import { useRiderOrderChatUnreadQuery } from '../hooks/useSupportChat';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ProcessingOrderDetail'>;
@@ -143,6 +143,9 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const updateStatusMutation = useUpdateRiderOrderStatusMutation(orderId);
   const [statusNotice, setStatusNotice] = useState<RiderOrderUpdatableStatus | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
+  const [locationPermissionIssue, setLocationPermissionIssue] = useState<'foreground' | 'background' | null>(null);
+  const [canAskLocationAgain, setCanAskLocationAgain] = useState(true);
+  const [locationPermissionRevision, setLocationPermissionRevision] = useState(0);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(56);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -150,6 +153,9 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const mapRef = useRef<MapView>(null);
   const isFocusedRef = useRef(isFocused);
   const isFetchingRef = useRef(detailQuery.isFetching);
+  const isLiveTrackingStatus = ['picked_up', 'out_for_delivery', 'arrived'].includes(
+    detailQuery.data?.status ?? '',
+  );
 
   useEffect(() => {
     isFocusedRef.current = isFocused;
@@ -172,6 +178,14 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
 
       if (!isReturningToForeground || !isFocusedRef.current) return;
 
+      if (isLiveTrackingStatus) {
+        void getRiderDeliveryLocationPermissionStatus().then((permission) => {
+          setLocationPermissionIssue(permission.granted ? null : permission.level);
+          setCanAskLocationAgain(permission.granted || permission.canAskAgain);
+          if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
+        }).catch(() => setLocationPermissionIssue('foreground'));
+      }
+
       const now = Date.now();
       const elapsedSinceLastRefetch = now - lastResumeRefetchAtRef.current;
       if (elapsedSinceLastRefetch < DETAIL_RESUME_REFETCH_COOLDOWN_MS || isFetchingRef.current) return;
@@ -183,16 +197,21 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     return () => {
       subscription.remove();
     };
-  }, [detailQuery.refetch, orderId]);
+  }, [detailQuery.refetch, isLiveTrackingStatus, orderId]);
 
-  const isLiveTrackingStatus = ['picked_up', 'out_for_delivery', 'arrived'].includes(
-    detailQuery.data?.status ?? '',
-  );
+  useEffect(() => {
+    if (!isLiveTrackingStatus) return;
+    void getRiderDeliveryLocationPermissionStatus().then((permission) => {
+      setLocationPermissionIssue(permission.granted ? null : permission.level);
+      setCanAskLocationAgain(permission.granted || permission.canAskAgain);
+    }).catch(() => setLocationPermissionIssue('foreground'));
+  }, [isLiveTrackingStatus]);
   const riderLocation = useRiderLiveLocationTracking({
     customerUserId: detailQuery.data?.customerUserId,
     enabled: isLiveTrackingStatus,
     orderId,
     stopWhenDisabled: Boolean(detailQuery.data?.status) && !isLiveTrackingStatus,
+    permissionRevision: locationPermissionRevision,
   });
   const pickupCoordinate = useMemo(
     () => toCoordinate(detailQuery.data?.pickupLatitude, detailQuery.data?.pickupLongitude),
@@ -337,12 +356,17 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
         return;
       }
 
-      if (nextUpdateStatus === 'picked_up' || nextUpdateStatus === 'out_for_delivery') {
+      if (nextUpdateStatus === 'picked_up') {
         setIsRequestingLocationPermission(true);
         try {
-          await requestRiderDeliveryLocationPermissions();
+          const permission = await requestRiderDeliveryLocationPermissions();
+          setLocationPermissionIssue(permission.granted ? null : permission.level);
+          setCanAskLocationAgain(permission.granted || permission.canAskAgain);
+          if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
         } catch (error) {
           console.warn('[rider][location] delivery permission request unavailable', error);
+          setLocationPermissionIssue('foreground');
+          setCanAskLocationAgain(true);
         } finally {
           setIsRequestingLocationPermission(false);
         }
@@ -372,6 +396,27 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       return;
     }
 
+  };
+
+  const recoverLocationPermission = async () => {
+    if (!canAskLocationAgain) {
+      try { await Linking.openSettings(); } catch (error) {
+        console.warn('[rider][location] unable to open settings', error);
+      }
+      return;
+    }
+    setIsRequestingLocationPermission(true);
+    try {
+      const permission = await requestRiderDeliveryLocationPermissions();
+      setLocationPermissionIssue(permission.granted ? null : permission.level);
+      setCanAskLocationAgain(permission.granted || permission.canAskAgain);
+      if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
+    } catch (error) {
+      console.warn('[rider][location] permission retry unavailable', error);
+      setLocationPermissionIssue('foreground');
+    } finally {
+      setIsRequestingLocationPermission(false);
+    }
   };
 
   const closeDeliveredModal = () => {
@@ -572,6 +617,18 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       </View>
 
       <View style={[styles.bottomControls, { bottom: Math.max(insets.bottom, 8) }]}>
+        {locationPermissionIssue && isLiveTrackingStatus ? (
+          <View style={[styles.locationPermissionNotice, { backgroundColor: theme.colors.amber100 }]}>
+            <Text variant="caption" color={theme.colors.amber800} style={styles.locationPermissionText}>
+              {t(locationPermissionIssue === 'background' ? 'order_location_background_needed' : 'order_location_foreground_needed')}
+            </Text>
+            <Pressable onPress={() => void recoverLocationPermission()} disabled={isRequestingLocationPermission} accessibilityRole="button">
+              <Text variant="caption" weight="bold" color={theme.colors.amber800}>
+                {t(canAskLocationAgain ? 'order_location_retry' : 'order_location_settings')}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
         <View style={styles.floatingRow}>
           <Pressable style={[styles.navigateChip, { backgroundColor: theme.colors.zinc800 }]} onPress={openNavigation}>
             <NavigationIcon color={theme.colors.white} />
@@ -880,6 +937,16 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     gap: 12,
   },
+  locationPermissionNotice: {
+    marginHorizontal: 16,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  locationPermissionText: { flex: 1 },
   floatingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

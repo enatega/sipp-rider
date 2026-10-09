@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   FlatList,
   KeyboardAvoidingView,
   Linking,
+  Modal,
   Platform,
   Pressable,
   TextInput as RNTextInput,
@@ -24,7 +26,9 @@ import {
   useSupportChatMessagesQuery,
   useOrderChatSessionQuery,
   useMarkOrderChatReadMutation,
+  useUploadOrderChatPhotoMutation,
 } from '../hooks/useSupportChat';
+import { useOrderChatPhotoPicker } from '../hooks/useOrderChatPhotoPicker';
 import { SupportChatMessage, SupportChatMessagesResponse } from '../api/supportChatTypes';
 import { riderHomeKeys, supportChatKeys } from '../api/queryKeys';
 import type { RiderOrderDetail } from '../api/riderOrderDetailTypes';
@@ -52,6 +56,8 @@ export default function OrderChatScreen({ navigation, route }: Props) {
   const { session } = useAuth();
   const [message, setMessage] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const photoPicker = useOrderChatPhotoPicker();
   const listRef = useRef<FlatList<SupportChatMessage> | null>(null);
 
   const senderId = normalizeParticipantId(session.user?.id);
@@ -63,6 +69,7 @@ export default function OrderChatScreen({ navigation, route }: Props) {
 
   const messagesQuery = useSupportChatMessagesQuery(activeChatBoxId);
   const sendMessageMutation = useSendSupportChatMessageMutation(activeChatBoxId);
+  const uploadPhotoMutation = useUploadOrderChatPhotoMutation();
   const orderChatQuery = useOrderChatSessionQuery(route.params.orderId, route.params.kind);
   const markRead = useMarkOrderChatReadMutation();
 
@@ -109,11 +116,12 @@ export default function OrderChatScreen({ navigation, route }: Props) {
     const unsubscribe = supportChatSocketClient.onReceiveMessage((socketMessage: SocketReceivedMessage) => {
       const incomingChatBoxId = socketMessage.chatBoxId ?? socketMessage.chat_box_id ?? null;
       const incomingText = socketMessage.text?.trim();
+      const incomingAttachments = socketMessage.attachmentUrls ?? [];
       const incomingSender = normalizeParticipantId(socketMessage.senderId ?? socketMessage.sender);
       const incomingReceiver = normalizeParticipantId(socketMessage.receiverId ?? socketMessage.receiver);
 
       if (socketMessage.orderId !== route.params.orderId || socketMessage.kind !== route.params.kind) return;
-      if (!incomingText) return;
+      if (!incomingText && incomingAttachments.length === 0) return;
 
       if (activeChatBoxId && incomingChatBoxId && activeChatBoxId !== incomingChatBoxId) {
         return;
@@ -132,7 +140,8 @@ export default function OrderChatScreen({ navigation, route }: Props) {
       }
       const receivedMessage: SupportChatMessage = {
         id: socketMessage.id,
-        text: incomingText,
+        text: incomingText ?? '',
+        attachmentUrls: incomingAttachments,
         senderId: incomingSender,
         receiverId: incomingReceiver,
         createdAt: socketMessage.createdAt ?? socketMessage.updatedAt ?? new Date().toISOString(),
@@ -161,76 +170,79 @@ export default function OrderChatScreen({ navigation, route }: Props) {
     scrollToLatest(true);
   }, [messages.length, scrollToLatest]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const text = message.trim();
-    if (!text) return;
+    if (!text && !photoPicker.photo) return;
 
     if (!senderId) {
       setLocalError(t('chat_send_not_available'));
       return;
     }
 
-    const payload = {
-      senderId,
-      receiverId: receiverId ?? '',
-      text,
-      orderId: route.params.orderId,
-      kind: route.params.kind,
-    };
     setLocalError(null);
-    sendMessageMutation.mutate(
-      payload,
-      {
-        onSuccess: (response) => {
-          const nextChatBoxId = response?.chatBoxId ?? activeChatBoxId;
-          if (response?.chatBoxId && response.chatBoxId !== activeChatBoxId) {
-            setActiveChatBoxId(response.chatBoxId);
+    try {
+      const uploadedPhoto = photoPicker.photo
+        ? await uploadPhotoMutation.mutateAsync({
+          orderId: route.params.orderId,
+          kind: route.params.kind,
+          photo: photoPicker.photo,
+        })
+        : null;
+      const attachmentUrls = uploadedPhoto ? [uploadedPhoto.url] : [];
+      const response = await sendMessageMutation.mutateAsync({
+        senderId,
+        receiverId: receiverId ?? '',
+        text,
+        attachmentUrls,
+        orderId: route.params.orderId,
+        kind: route.params.kind,
+      });
+      const nextChatBoxId = response?.chatBoxId ?? activeChatBoxId;
+      if (response?.chatBoxId && response.chatBoxId !== activeChatBoxId) {
+        setActiveChatBoxId(response.chatBoxId);
 
-            queryClient.setQueryData<RiderOrderDetail>(
-              riderHomeKeys.orderDetail(route.params.orderId),
-              (current) => {
-                if (!current) return current;
-                return {
-                  ...current,
-                  ...(route.params.kind === 'store_rider'
-                    ? { chatBoxId: response.chatBoxId }
-                    : { customerRiderChatBoxId: response.chatBoxId }),
-                };
-              },
-            );
-          }
-
-          if (nextChatBoxId) {
-            const resolvedText = response?.detail?.text?.trim() || text;
-            const sentMessage: SupportChatMessage = {
-              id: response.detail?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-              text: resolvedText,
-              senderId: response.detail?.sender_id ?? senderId,
-              receiverId: response.detail?.receiver_id ?? receiverId,
-              createdAt: response.detail?.createdAt ?? response.detail?.updatedAt ?? new Date().toISOString(),
+        queryClient.setQueryData<RiderOrderDetail>(
+          riderHomeKeys.orderDetail(route.params.orderId),
+          (current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              ...(route.params.kind === 'store_rider'
+                ? { chatBoxId: response.chatBoxId }
+                : { customerRiderChatBoxId: response.chatBoxId }),
             };
+          },
+        );
+      }
 
-            queryClient.setQueryData<SupportChatMessagesResponse>(
-              supportChatKeys.messages(nextChatBoxId),
-              (current) => {
-                const existing = current?.messages ?? [];
-                const alreadyExists = existing.some((item) => item.id === sentMessage.id);
-                if (alreadyExists) return current ?? { messages: existing };
-                return {
-                  messages: [...existing, sentMessage],
-                };
-              },
-            );
-          }
+      if (nextChatBoxId) {
+        const resolvedText = response?.detail?.text?.trim() || text;
+        const sentMessage: SupportChatMessage = {
+          id: response.detail?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          text: resolvedText,
+          attachmentUrls: response.detail?.attachmentUrls ?? attachmentUrls,
+          senderId: response.detail?.sender_id ?? senderId,
+          receiverId: response.detail?.receiver_id ?? receiverId,
+          createdAt: response.detail?.createdAt ?? response.detail?.updatedAt ?? new Date().toISOString(),
+        };
 
-          setMessage('');
-          scrollToLatest(true);
-        },
-        onError: (error) => {
-          setLocalError(error.message);
-        },
-      },
-    );
+        queryClient.setQueryData<SupportChatMessagesResponse>(
+          supportChatKeys.messages(nextChatBoxId),
+          (current) => {
+            const existing = current?.messages ?? [];
+            const alreadyExists = existing.some((item) => item.id === sentMessage.id);
+            if (alreadyExists) return current ?? { messages: existing };
+            return { messages: [...existing, sentMessage] };
+          },
+        );
+      }
+
+      setMessage('');
+      photoPicker.clearPhoto();
+      scrollToLatest(true);
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : t('chat_photo_pick_failed'));
+    }
   };
 
   const openDialer = async () => {
@@ -264,12 +276,12 @@ export default function OrderChatScreen({ navigation, route }: Props) {
                 : { backgroundColor: theme.colors.emerald100, borderColor: theme.colors.green50 },
             ]}
           >
-            <Text
-              style={styles.messageText}
-              color={theme.colors.gray800}
-            >
-              {item.text}
-            </Text>
+            {item.attachmentUrls.map((url) => (
+              <Pressable key={url} onPress={() => setPreviewUrl(url)} accessibilityRole="button" accessibilityLabel={t('chat_photo_view')}>
+                <Image source={{ uri: url }} style={styles.messagePhoto} resizeMode="cover" />
+              </Pressable>
+            ))}
+            {item.text ? <Text style={styles.messageText} color={theme.colors.gray800}>{item.text}</Text> : null}
           </View>
         </View>
         <View style={[styles.timeRow, isMine ? styles.myRow : styles.otherRow]}>
@@ -380,8 +392,18 @@ export default function OrderChatScreen({ navigation, route }: Props) {
             },
           ]}
         >
+          {photoPicker.photo ? (
+            <View style={[styles.photoSelection, { backgroundColor: theme.colors.surface }]}>
+              <Image source={{ uri: photoPicker.photo.uri }} style={styles.photoThumbnail} />
+              <Text variant="caption" color={theme.colors.gray900} numberOfLines={1} style={styles.photoName}>{photoPicker.photo.name}</Text>
+              <Pressable onPress={photoPicker.clearPhoto} accessibilityRole="button" accessibilityLabel={t('chat_photo_remove')} style={styles.removePhoto}>
+                <Text weight="bold" color={theme.colors.gray900}>×</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          {uploadPhotoMutation.isPending ? <Text variant="caption" color={theme.colors.gray900}>{t('chat_photo_uploading')}</Text> : null}
           <View style={[styles.composerInputWrap, { backgroundColor: theme.colors.white }]}>
-            <Pressable style={styles.plusButton}>
+            <Pressable style={styles.plusButton} onPress={photoPicker.choosePhoto} disabled={uploadPhotoMutation.isPending || sendMessageMutation.isPending} accessibilityRole="button" accessibilityLabel={t('chat_photo_add')}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M12 22C17.523 22 22 17.523 22 12C22 6.477 17.523 2 12 2C6.477 2 2 6.477 2 12C2 17.523 6.477 22 12 22Z" stroke={theme.colors.gray500} strokeWidth={1.8} />
                 <Path d="M12 8V16M8 12H16" stroke={theme.colors.gray500} strokeWidth={1.8} strokeLinecap="round" />
@@ -398,10 +420,10 @@ export default function OrderChatScreen({ navigation, route }: Props) {
               style={({ pressed }) => [
                 styles.sendIconButton,
                 pressed ? styles.pressed : null,
-                sendMessageMutation.isPending ? styles.disabled : null,
+                sendMessageMutation.isPending || uploadPhotoMutation.isPending ? styles.disabled : null,
               ]}
-              onPress={handleSend}
-              disabled={sendMessageMutation.isPending}
+              onPress={() => void handleSend()}
+              disabled={sendMessageMutation.isPending || uploadPhotoMutation.isPending || (!message.trim() && !photoPicker.photo)}
             >
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
                 <Path d="M22 2L11 13" stroke={theme.colors.gray900} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
@@ -411,13 +433,19 @@ export default function OrderChatScreen({ navigation, route }: Props) {
           </View>
         </View>
 
-        {localError ? (
+        {localError || photoPicker.error ? (
           <View style={styles.errorRow}>
             <Text variant="caption" color={theme.colors.red500}>
-              {localError}
+              {localError ?? photoPicker.error}
             </Text>
           </View>
         ) : null}
+        <Modal visible={Boolean(previewUrl)} transparent animationType="fade" onRequestClose={() => setPreviewUrl(null)}>
+          <Pressable style={[styles.photoPreview, { backgroundColor: theme.colors.zinc800 }]} onPress={() => setPreviewUrl(null)} accessibilityRole="button" accessibilityLabel={t('image_view_close')}>
+            {previewUrl ? <Image source={{ uri: previewUrl }} style={styles.previewImage} resizeMode="contain" /> : null}
+            <Text color={theme.colors.white}>{t('image_view_close')}</Text>
+          </Pressable>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -545,6 +573,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  messagePhoto: { width: 208, height: 208, borderRadius: 8, marginBottom: 6 },
+  photoSelection: { flexDirection: 'row', alignItems: 'center', gap: 10, borderRadius: 12, padding: 8 },
+  photoThumbnail: { width: 42, height: 42, borderRadius: 8 },
+  photoName: { flex: 1 },
+  removePhoto: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  photoPreview: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 20, gap: 16 },
+  previewImage: { width: '100%', height: '80%' },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -567,8 +602,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   plusButton: {
-    width: 24,
-    height: 24,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -580,8 +615,8 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
   sendIconButton: {
-    width: 24,
-    height: 24,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

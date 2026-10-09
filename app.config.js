@@ -84,8 +84,8 @@ module.exports = {
       [
         'expo-image-picker',
         {
-          photosPermission: 'Allow $(PRODUCT_NAME) to access your photos to upload documents.',
-          cameraPermission: 'Allow $(PRODUCT_NAME) to use your camera to capture documents.',
+          photosPermission: 'Allow $(PRODUCT_NAME) to select photos for delivery chats and documents.',
+          cameraPermission: 'Allow $(PRODUCT_NAME) to take photos for delivery chats and documents.',
           microphonePermission: false,
         },
       ],
