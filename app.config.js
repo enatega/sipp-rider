@@ -3,8 +3,8 @@ const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY ?? 'DUMMY_GOOGLE_MAPS_A
 module.exports = {
   expo: {
     name: 'Sipp Rider',
-    slug: 'sipp-rider',
-    owner: "sipp-delivery",
+    slug: 'enatega-deliveries-rider-app',
+    owner: "ninjas_code",
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/icon.png',
@@ -16,7 +16,7 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.sipp.rider.app',
+      bundleIdentifier: 'com.enatega.deliveries.rider',
       splash: {
         image: './assets/splash-light.png',
         resizeMode: 'cover',
@@ -46,7 +46,7 @@ module.exports = {
           backgroundColor: '#ffffff',
         },
       },
-      package: 'com.sipp.rider.app',
+      package: 'com.enatega.deliveries.rider',
       googleServicesFile: './google-services.json',
       edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: 'resize',
@@ -60,7 +60,7 @@ module.exports = {
       favicon: './assets/favicon.png',
     },
     updates: {
-      url: 'https://u.expo.dev/54910e7e-fa72-4582-aec7-a45f203f5873',
+      url: 'https://u.expo.dev/dd251847-b122-424b-b7dd-60bd8ddbbe90',
     },
     runtimeVersion: {
       policy: 'appVersion',
@@ -92,7 +92,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: '54910e7e-fa72-4582-aec7-a45f203f5873',
+        projectId: 'dd251847-b122-424b-b7dd-60bd8ddbbe90',
       },
     },
   },
