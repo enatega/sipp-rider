@@ -196,6 +196,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       const data = notification.request.content.data as Record<string, unknown>;
       void queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
       void queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
+      if (!notification.request.content.title?.trim() || !notification.request.content.body?.trim()) return;
       if (data.type === 'zone_order_available') {
         const offer = notificationDataToOffer(data);
         if (offer) receiveOffer(offer);
