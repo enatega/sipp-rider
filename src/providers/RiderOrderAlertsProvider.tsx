@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import * as Notifications from 'expo-notifications';
-import { AppState, Vibration } from 'react-native';
+import { Vibration } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthProvider';
 import { riderHomeKeys } from '../api/queryKeys';
@@ -171,21 +171,14 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
   }, []);
 
   useEffect(() => {
-    const syncAlert = () => {
-      const hasActiveOffer = AppState.currentState === 'active' && hasOffer;
-      if (hasActiveOffer) {
-        void newOrderBeepManager.start();
-        Vibration.vibrate([0, 500, 500], true);
-      } else {
-        void newOrderBeepManager.stop();
-        Vibration.cancel();
-      }
-    };
-
-    syncAlert();
-    const subscription = AppState.addEventListener('change', syncAlert);
+    if (hasOffer) {
+      void newOrderBeepManager.start();
+      Vibration.vibrate([0, 500, 500], true);
+    } else {
+      void newOrderBeepManager.stop();
+      Vibration.cancel();
+    }
     return () => {
-      subscription.remove();
       void newOrderBeepManager.stop();
       Vibration.cancel();
     };

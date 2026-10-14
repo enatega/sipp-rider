@@ -138,13 +138,7 @@ export function useRiderOrderSocketSync() {
 
     let appState = AppState.currentState;
     const appStateSubscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      const wasActive = appState === 'active';
       appState = nextState;
-
-      if (wasActive && nextState !== 'active') {
-        riderOrdersSocketClient.disconnect();
-        return;
-      }
 
       if (nextState === 'active') {
         riderOrdersSocketClient.connect();
