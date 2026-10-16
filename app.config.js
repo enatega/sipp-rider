@@ -5,7 +5,7 @@ module.exports = {
     name: 'Sipp Rider',
     slug: 'sipp-rider',
     owner: "sipp-delivery",
-    version: '1.0.0',
+    version: '1.0.3',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -68,7 +68,7 @@ module.exports = {
     plugins: [
       [
         'expo-notifications',
-        { sounds: ['./assets/sound/beep3.mp3'] },
+        { sounds: ['./assets/sound/beep3.mp3', './assets/sound/new_order_chime.wav', './assets/sound/new_order_beep.wav', './assets/sound/new_order_beep_5s.wav'] },
       ],
       'expo-secure-store',
       [

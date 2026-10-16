@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Feather } from '@expo/vector-icons';
@@ -21,6 +21,7 @@ type Props = {
   order: RiderHomeOrder;
   tab: RiderOrderTab;
   onAssigned: (order: { orderId: string; orderCode: string; storeName: string | null }) => void;
+  highlighted?: boolean;
 };
 type ContactKind = 'store_rider' | 'customer_rider';
 
@@ -41,7 +42,7 @@ function usableImage(image: string | null) {
   return image && !/placehold\.co|placeholder/i.test(image) ? image : null;
 }
 
-export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
+export default function HomeOrderCard({ order, tab, onAssigned, highlighted = false }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const { formatCurrency } = useAppCurrency();
@@ -52,8 +53,10 @@ export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
   const [assignError, setAssignError] = React.useState('');
 
   const code = (order.orderCode ?? order.orderId?.split('-')[0]?.toUpperCase() ?? '—').replace(/^#/, '');
-  const status = (tab === 'processing' ? order.riderStatusLabel ?? order.riderStatus : null)
-    ?? order.statusLabel ?? order.status ?? t('status_unknown');
+  const status = tab === 'new'
+    ? t('status_new_order')
+    : ((tab === 'processing' ? order.riderStatusLabel ?? order.riderStatus : null)
+      ?? order.statusLabel ?? order.status ?? t('status_unknown'));
   const tone = statusTone(theme.colors, status);
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
   const placedAt = createdAt && !Number.isNaN(createdAt.getTime())
@@ -79,6 +82,7 @@ export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
     const orderId = order.orderId;
     if (tab !== 'new' || !orderId) return;
     assignOrderMutation.reset();
+    setAssignError('');
     try {
       await assignOrderMutation.mutateAsync(orderId);
       onAssigned({ orderId, orderCode: code, storeName: order.storeName });
@@ -87,47 +91,8 @@ export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
     }
   };
 
-  if (tab === 'new') {
-    return (
-      <View style={[styles.compactCard, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]}>
-        <View style={styles.compactHeader}>
-          <View style={styles.headerCopy}>
-            <Text variant="subtitle" weight="bold" color={theme.colors.gray900}>#{code}</Text>
-            <Text variant="caption" color={theme.colors.gray600}>{placedAt}</Text>
-          </View>
-          <Text variant="subtitle" weight="bold" color={theme.colors.gray900}>{formatCurrency(Number(order.orderAmount ?? 0))}</Text>
-        </View>
-
-        <View style={[styles.compactRoute, { borderTopColor: theme.colors.gray200, borderBottomColor: theme.colors.gray200 }]}>
-          <CompactLocationRow
-            label={t('home_store_contact')}
-            name={order.storeName || t('chat_store_name')}
-            address={order.pickupAddress}
-            icon={<PickupLocationIcon width={20} height={20} stroke={theme.colors.sky600} />}
-            colors={theme.colors}
-          />
-          <CompactLocationRow
-            label={t('home_customer_contact')}
-            name={order.customerName || t('chat_customer_name')}
-            address={order.deliveryAddress}
-            icon={<HomeIcon width={20} height={20} stroke={theme.colors.green600} />}
-            colors={theme.colors}
-          />
-        </View>
-
-        <View style={styles.compactMeta}>
-          <Text variant="caption" color={theme.colors.gray600}>{t('home_distance')}: <Text variant="caption" weight="semiBold" color={theme.colors.gray900}>{order.distanceKm == null ? '—' : `${order.distanceKm.toFixed(1)} km`}</Text></Text>
-          <Text variant="caption" color={theme.colors.gray600} numberOfLines={1}>{order.paymentMethod || '—'}</Text>
-        </View>
-        {note ? <View style={[styles.compactNote, { backgroundColor: theme.colors.gray100 }]}><Text variant="caption" weight="semiBold" color={theme.colors.gray700}>{t('home_comment')}</Text><Text variant="caption" color={theme.colors.gray900}>{note}</Text></View> : null}
-        {assignError ? <Text variant="caption" color={theme.colors.red500}>{assignError}</Text> : null}
-        {order.canAssignMe ? <Button label={assignOrderMutation.isPending ? t('order_assigning') : t('order_assign_me')} onPress={assignOrder} disabled={assignOrderMutation.isPending} containerStyle={styles.primaryButton} textColor={theme.colors.gray900} /> : null}
-      </View>
-    );
-  }
-
   return (
-    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray200, shadowColor: theme.colors.shadow }]}>
+    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: highlighted ? theme.colors.primary : theme.colors.gray200, shadowColor: theme.colors.shadow }]}>
       <Pressable onPress={openDetail} disabled={tab !== 'processing'} style={styles.header} accessibilityRole={tab === 'processing' ? 'button' : undefined} accessibilityLabel={tab === 'processing' ? t('home_open_order', { code }) : undefined}>
         <View style={styles.headerCopy}>
           <Text variant="subtitle" weight="bold" color={theme.colors.gray900}>#{code}</Text>
@@ -160,42 +125,10 @@ export default function HomeOrderCard({ order, tab, onAssigned }: Props) {
       </View>
 
       {note ? <View style={[styles.note, { backgroundColor: theme.colors.gray100 }]}><Text variant="caption" weight="semiBold" color={theme.colors.gray700}>{t('home_comment')}</Text><Text variant="label" color={theme.colors.gray900}>{note}</Text></View> : null}
+      {tab === 'new' && assignError ? <Text variant="caption" color={theme.colors.red500}>{assignError}</Text> : null}
       {tab === 'new' && order.canAssignMe ? <Button label={assignOrderMutation.isPending ? t('order_assigning') : t('order_assign_me')} onPress={assignOrder} disabled={assignOrderMutation.isPending} containerStyle={styles.primaryButton} textColor={theme.colors.gray900} /> : null}
       {tab === 'processing' ? <Pressable onPress={openDetail} style={styles.detailsLink} accessibilityRole="button"><Text variant="label" weight="semiBold" color={theme.colors.sky600}>{t('home_view_details')} ›</Text></Pressable> : null}
 
-      <Modal transparent animationType="fade" visible={Boolean(assignError)} onRequestClose={() => setAssignError('')}>
-        <View style={[styles.modalBackdrop, { backgroundColor: theme.colors.modalBackdrop }]}>
-          <View style={[styles.modalCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray200 }]}>
-            <Text variant="subtitle" weight="semiBold" color={theme.colors.gray900}>{t('order_assign_failed_title')}</Text>
-            <Text variant="label" color={theme.colors.gray700}>{assignError}</Text>
-            <Button label={t('order_assign_failed_close')} onPress={() => setAssignError('')} containerStyle={styles.primaryButton} textColor={theme.colors.gray900} />
-          </View>
-        </View>
-      </Modal>
-    </View>
-  );
-}
-
-function CompactLocationRow({ label, name, address, icon, colors }: {
-  label: string; name: string; address: string | null; icon: React.ReactNode; colors: ThemeColors;
-}) {
-  const { t } = useTranslations('app');
-  const openMap = () => {
-    if (!address) return;
-    void Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`)
-      .catch(() => Alert.alert(t('home_map_unavailable')));
-  };
-  return (
-    <View style={styles.compactLocationRow}>
-      <View style={[styles.compactLocationIcon, { backgroundColor: colors.gray100 }]}>{icon}</View>
-      <View style={styles.compactLocationCopy}>
-        <Text variant="caption" color={colors.gray600}>{label}</Text>
-        <Text variant="label" weight="semiBold" color={colors.gray900} numberOfLines={1}>{name}</Text>
-        <Text variant="caption" color={colors.gray700} numberOfLines={2}>{address?.trim() || '—'}</Text>
-      </View>
-      {address ? <Pressable onPress={openMap} accessibilityRole="button" accessibilityLabel={t('home_open_map', { place: label })} style={[styles.compactMapAction, { backgroundColor: colors.gray100 }]}>
-        <Feather name="map-pin" size={17} color={colors.gray900} />
-      </Pressable> : null}
     </View>
   );
 }
@@ -241,15 +174,6 @@ function ContactCard({ kind, name, address, image, unreadCount, showChat, onChat
 }
 
 const styles = StyleSheet.create({
-  compactCard: { borderRadius: 16, padding: 16, gap: 12, marginBottom: 14, shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
-  compactHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  compactRoute: { borderTopWidth: 1, borderBottomWidth: 1, paddingVertical: 12, gap: 14 },
-  compactLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  compactLocationIcon: { width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  compactLocationCopy: { flex: 1, minWidth: 0, gap: 1 },
-  compactMapAction: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  compactMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 },
-  compactNote: { borderRadius: 10, padding: 10, gap: 2 },
   card: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 14, marginBottom: 14, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 2 },
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   headerCopy: { gap: 3, flex: 1 },
@@ -269,6 +193,4 @@ const styles = StyleSheet.create({
   note: { borderRadius: 12, padding: 12, gap: 4 },
   primaryButton: { height: 46, borderRadius: 12 },
   detailsLink: { minHeight: 34, alignItems: 'center', justifyContent: 'center' },
-  modalBackdrop: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
-  modalCard: { width: '100%', borderRadius: 16, borderWidth: 1, padding: 18, gap: 12 },
 });

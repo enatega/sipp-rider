@@ -11,6 +11,7 @@ export type RiderTabParamList = {
     assignedOrder?: { orderId: string; orderCode: string; storeName: string | null };
     completedOrder?: { orderCode: string };
     preferredTab?: 'new' | 'processing' | 'delivered';
+    focusedOffer?: { orderId: string; orderCode?: string };
   } | undefined;
   WalletTab: undefined;
   EarningsTab: undefined;

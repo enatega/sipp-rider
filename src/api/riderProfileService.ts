@@ -10,6 +10,10 @@ const RIDER_PASSWORD_PATH = '/users/password';
 
 export const riderProfileService = {
   getFullProfile: () => apiClient.get<RiderFullProfileResponse>(RIDER_FULL_PROFILE_PATH),
+  setAvailability: (availabilityStatus: 'online' | 'offline') =>
+    apiClient.patch<{ success: boolean; data: { availabilityStatus: 'online' | 'offline' } }>(
+      '/users/riders/availability', { availabilityStatus },
+    ),
   updatePassword: (payload: UpdateRiderPasswordPayload) =>
     apiClient.patch<UpdateRiderPasswordResponse>(RIDER_PASSWORD_PATH, payload),
 };

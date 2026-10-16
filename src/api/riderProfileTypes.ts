@@ -24,6 +24,7 @@ export type RiderFullProfileResponse = {
   email: string | null;
   mobileNumber: string | null;
   isApproved?: boolean;
+  availabilityStatus: 'online' | 'offline';
 };
 
 export type UpdateRiderPasswordPayload = {

@@ -1,73 +1,91 @@
 import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from 'expo-av';
+import * as Notifications from 'expo-notifications';
+import { AppState, Platform } from 'react-native';
+import { RIDER_ORDER_BEEP_5S_CHANNEL_ID } from '../hooks/useExpoPushToken';
 
 class NewOrderBeepManager {
+  private generation = 0;
   private sound: Audio.Sound | null = null;
-  private preparing: Promise<Audio.Sound> | null = null;
-  private shouldPlay = false;
-  private operation: Promise<void> = Promise.resolve();
+  private finishCurrent: (() => void) | null = null;
 
-  private async ensureSound() {
-    if (this.sound) return this.sound;
-    if (this.preparing) return this.preparing;
-
-    this.preparing = (async () => {
+  async playOnce(): Promise<void> {
+    const request = ++this.generation;
+    const previous = this.sound;
+    const finishPrevious = this.finishCurrent;
+    if (previous) {
+      try {
+        await previous.stopAsync();
+      } catch {
+        // The previous sound may already have finished.
+      }
+      finishPrevious?.();
+    }
+    try {
+      if (request !== this.generation || AppState.currentState !== 'active') return;
+      const permission = await Notifications.getPermissionsAsync();
+      if (!permission.granted || permission.ios?.allowsSound === false) return;
+      if (Platform.OS === 'android') {
+        const channel = await Notifications.getNotificationChannelAsync(RIDER_ORDER_BEEP_5S_CHANNEL_ID);
+        if (!channel || channel.importance < Notifications.AndroidImportance.DEFAULT || !channel.sound) return;
+      }
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-        shouldDuckAndroid: false,
+        playsInSilentModeIOS: false,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
         interruptionModeIOS: InterruptionModeIOS.MixWithOthers,
-        interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
+        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
       });
-
+      if (request !== this.generation || AppState.currentState !== 'active') return;
       const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sound/beep3.mp3'),
-        { shouldPlay: false, isLooping: true, volume: 1 },
+        require('../../assets/sound/new_order_beep_5s.wav'),
+        { shouldPlay: false, isLooping: false, volume: 1 },
       );
+      if (request !== this.generation || AppState.currentState !== 'active') {
+        await sound.unloadAsync();
+        return;
+      }
       this.sound = sound;
-      return sound;
-    })();
-
-    try {
-      return await this.preparing;
-    } finally {
-      this.preparing = null;
+      await new Promise<void>((resolve) => {
+        let finished = false;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          if (timeout) clearTimeout(timeout);
+          if (this.sound === sound) this.sound = null;
+          if (this.finishCurrent === finish) this.finishCurrent = null;
+          sound.setOnPlaybackStatusUpdate(null);
+          void sound.unloadAsync().catch(() => undefined);
+          resolve();
+        };
+        this.finishCurrent = finish;
+        timeout = setTimeout(finish, 5500);
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) finish();
+          if (!status.isLoaded && status.error) finish();
+        });
+        void sound.playAsync().catch((error) => {
+          console.warn('[rider][order-alert] Unable to play beep', error);
+          finish();
+        });
+      });
+    } catch (error) {
+      console.warn('[rider][order-alert] Unable to play beep', error);
     }
   }
 
-  async start() {
-    this.shouldPlay = true;
-    this.operation = this.operation.then(async () => {
-      try {
-        if (!this.shouldPlay) return;
-        const sound = await this.ensureSound();
-        if (!this.shouldPlay) return;
-        const status = await sound.getStatusAsync();
-        if (status.isLoaded && !status.isPlaying && this.shouldPlay) {
-          await sound.playAsync();
-        }
-      } catch (error) {
-        console.warn('[rider][order-alert] unable to play beep', error);
-      }
-    });
-    await this.operation;
-  }
-
-  async stop() {
-    this.shouldPlay = false;
-    this.operation = this.operation.then(async () => {
-      try {
-        if (this.shouldPlay) return;
-        const sound = this.sound;
-        this.sound = null;
-        if (!sound) return;
-        await sound.stopAsync();
-        await sound.unloadAsync();
-      } catch (error) {
-        console.warn('[rider][order-alert] unable to stop beep', error);
-      }
-    });
-    await this.operation;
+  async stop(): Promise<void> {
+    this.generation += 1;
+    const sound = this.sound;
+    const finish = this.finishCurrent;
+    if (!sound) return;
+    try {
+      await sound.stopAsync();
+    } catch {
+      // The audio resource may already have finished.
+    }
+    finish?.();
   }
 }
 

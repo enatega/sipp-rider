@@ -7,6 +7,8 @@ import { useAppCurrency } from '../../../hooks/useCurrency';
 
 type Props = {
   currentBalance: number;
+  availableBalance: number;
+  availableLabel: string;
   onWithdrawPress: () => void;
   withdrawLabel: string;
   balanceLabel: string;
@@ -14,6 +16,8 @@ type Props = {
 
 export default function WalletBalanceCard({
   currentBalance,
+  availableBalance,
+  availableLabel,
   onWithdrawPress,
   withdrawLabel,
   balanceLabel,
@@ -22,13 +26,20 @@ export default function WalletBalanceCard({
   const { formatCurrency } = useAppCurrency();
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.colors.gray50, borderColor: theme.colors.gray100 }]}>
+    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray300 }]}>
       <View style={styles.balanceWrap}>
         <Text weight="semiBold" style={[styles.balanceLabel, { color: theme.colors.gray600 }]}>
           {balanceLabel}
         </Text>
-        <Text weight="bold" style={[styles.balanceValue, { color: theme.colors.gray900 }]}>
+        <Text weight="bold" style={[styles.balanceValue, { color: theme.colors.gray900 }]} numberOfLines={1} adjustsFontSizeToFit>
           {formatCurrency(currentBalance)}
+        </Text>
+      </View>
+
+      <View style={[styles.availableRow, { borderTopColor: theme.colors.gray200 }]}>
+        <Text style={{ color: theme.colors.gray600 }}>{availableLabel}</Text>
+        <Text weight="semiBold" style={{ color: theme.colors.gray900 }} numberOfLines={1} adjustsFontSizeToFit>
+          {formatCurrency(availableBalance)}
         </Text>
       </View>
 
@@ -45,9 +56,9 @@ export default function WalletBalanceCard({
 const styles = StyleSheet.create({
   card: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    gap: 16,
+    borderRadius: 16,
+    padding: 20,
+    gap: 20,
   },
   balanceWrap: {
     gap: 8,
@@ -55,15 +66,17 @@ const styles = StyleSheet.create({
   balanceLabel: {
     fontSize: 16,
     lineHeight: 18,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   balanceValue: {
     fontSize: 32,
     lineHeight: 40,
-    textAlign: 'center',
+    textAlign: 'left',
+    fontVariant: ['tabular-nums'],
   },
   withdrawButton: {
     height: 54,
-    borderRadius: 40,
+    borderRadius: 12,
   },
+  availableRow: { borderTopWidth: 1, paddingTop: 16, flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
 });

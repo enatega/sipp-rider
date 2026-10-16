@@ -57,6 +57,7 @@ export function useRiderOrdersInfiniteQuery(tab: RiderOrderTab, search = '') {
         : lastPage.hasMore
           ? lastPage.offset + lastPage.limit
           : undefined,
-    staleTime: 15_000,
+    staleTime: search ? 0 : 15_000,
+    refetchOnMount: search ? 'always' : true,
   });
 }

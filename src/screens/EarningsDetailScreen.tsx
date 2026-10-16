@@ -5,20 +5,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import EarningsActivityRow from '../components/EarningsActivityRow';
 import EarningsBottomSheet from '../components/EarningsBottomSheet';
+import EarningsDateRangeSheet from '../components/EarningsDateRangeSheet';
 import SummaryCard from '../components/SummaryCard';
 import Text from '../components/Text';
 import VerticalList from '../components/VerticalList';
 import type { RiderEarningsActivity } from '../api/earningsTypes';
-import { useRiderEarningsActivitiesQuery } from '../hooks/useEarningsQueries';
+import { useRiderEarningsActivityPages } from '../hooks/useEarningsQueries';
 import { useAppCurrency } from '../hooks/useCurrency';
 import { useTranslations } from '../localization/LocalizationProvider';
 import { MainStackParamList } from '../navigation/types';
 import { lightColors } from '../theme/colors';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { typography } from '../theme/typography';
+import { earningsDateKey, formatEarningsDate } from '../utils/earningsDates';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'EarningsDetail'>;
-const ACTIVITIES_PAGE = 1;
 const ACTIVITIES_LIMIT = 10;
 
 export default function EarningsDetailScreen({ navigation }: Props) {
@@ -26,14 +27,17 @@ export default function EarningsDetailScreen({ navigation }: Props) {
   const { t } = useTranslations('app');
   const { formatCurrency } = useAppCurrency();
   const [selectedActivity, setSelectedActivity] = useState<RiderEarningsActivity | null>(null);
-  const { data: activitiesData } = useRiderEarningsActivitiesQuery(
-    ACTIVITIES_PAGE,
-    ACTIVITIES_LIMIT,
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+  const activitiesQuery = useRiderEarningsActivityPages(
+    ACTIVITIES_LIMIT, dateRange?.startDate, dateRange?.endDate,
   );
+  const activitiesData = activitiesQuery.data?.pages[0];
+  const activities = useMemo(() => activitiesQuery.data?.pages.flatMap((page) => page.data) ?? [], [activitiesQuery.data]);
 
   const summaryItems = useMemo(
     () => [
-      { label: t('earnings_hours'), value: activitiesData?.summary.hours_worked ?? '' },
+      { label: t('earnings_hours'), value: activitiesData?.summary.hours_worked || t('earnings_not_available') },
       { label: t('earnings_deliveries'), value: `${activitiesData?.summary.deliveries ?? ''}` },
       {
         label: t('earnings_total_earnings'),
@@ -44,12 +48,12 @@ export default function EarningsDetailScreen({ navigation }: Props) {
   );
 
   const dateRangeTitle = activitiesData
-    ? `${activitiesData.date_range.start_date} - ${activitiesData.date_range.end_date}`
+    ? `${formatEarningsDate(activitiesData.date_range.start_date)} – ${formatEarningsDate(activitiesData.date_range.end_date)}`
     : '';
 
   const handlePressDeliveries = () => {
     const activityDate = selectedActivity?.activity_date;
-    const activityId = activityDate ? activityDate.split('T')[0] : undefined;
+    const activityId = activityDate ? earningsDateKey(activityDate) : undefined;
     setSelectedActivity(null);
     navigation.navigate('DeliveriesDetail', { earningId: activityId });
   };
@@ -63,14 +67,20 @@ export default function EarningsDetailScreen({ navigation }: Props) {
         <Text variant="body" weight="semiBold" color={lightColors.black} style={styles.headerTitle} numberOfLines={1}>
           {dateRangeTitle}
         </Text>
-        <Pressable style={styles.iconButton} hitSlop={8} accessibilityRole="button" accessibilityLabel="Select date range">
-          <FunnelIcon color={theme.colors.gray900} />
+        <Pressable onPress={() => setFilterOpen(true)} style={styles.iconButton} hitSlop={8} accessibilityRole="button" accessibilityLabel="Select date range">
+          <FunnelIcon color={dateRange ? theme.colors.blue500 : theme.colors.gray900} />
         </Pressable>
       </View>
 
       <VerticalList
-        data={activitiesData?.data}
+        data={activities}
         keyExtractor={(item: RiderEarningsActivity) => item.activity_date}
+        onEndReached={() => {
+          if (activitiesQuery.hasNextPage && !activitiesQuery.isFetchingNextPage) {
+            void activitiesQuery.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.4}
         renderItem={({ item, index }) => (
           <View style={[styles.activityListItem, index === 0 ? styles.firstActivityListItem : null]}>
             <EarningsActivityRow
@@ -80,6 +90,11 @@ export default function EarningsDetailScreen({ navigation }: Props) {
           </View>
         )}
         ListHeaderComponent={<SummaryCard title={t('earnings_summary')} items={summaryItems} />}
+        ListEmptyComponent={activitiesQuery.isPending ? null : (
+          <Text variant="body" color={theme.colors.gray700} style={styles.emptyText}>
+            {dateRange ? t('earnings_filtered_empty') : t('earnings_empty_title')}
+          </Text>
+        )}
         style={styles.list}
         contentContainerStyle={styles.listContent}
       />
@@ -89,6 +104,14 @@ export default function EarningsDetailScreen({ navigation }: Props) {
         item={selectedActivity}
         onClose={() => setSelectedActivity(null)}
         onPressDeliveries={handlePressDeliveries}
+      />
+      <EarningsDateRangeSheet
+        visible={filterOpen}
+        startDate={dateRange?.startDate}
+        endDate={dateRange?.endDate}
+        onApply={(startDate, endDate) => { setDateRange({ startDate, endDate }); setFilterOpen(false); }}
+        onClear={() => { setDateRange(null); setFilterOpen(false); }}
+        onClose={() => setFilterOpen(false)}
       />
     </SafeAreaView>
   );
@@ -158,4 +181,5 @@ const styles = StyleSheet.create({
   firstActivityListItem: {
     paddingTop: 12,
   },
+  emptyText: { textAlign: 'center', paddingHorizontal: 24, paddingVertical: 32 },
 });

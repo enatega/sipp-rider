@@ -186,6 +186,7 @@ export default function WorkScheduleScreen() {
       <Sidebar
         visible={sidebar.sidebarOpen}
         availability={sidebar.availability}
+        isAvailabilityPending={sidebar.isAvailabilityPending}
         onAvailabilityChange={sidebar.setAvailability}
         onClose={sidebar.closeSidebar}
         onNavigate={(screen) => navigation.navigate(screen)}

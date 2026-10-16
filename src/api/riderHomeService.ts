@@ -96,18 +96,6 @@ export const riderHomeService = {
     );
   },
 
-  acceptOrderOffer: async (orderId: string) => {
-    return apiClient.patch<AssignOrderResponse>(
-      `${RIDER_HOME_BASE}/orders/${orderId}/offers/accept`,
-    );
-  },
-
-  declineOrderOffer: async (orderId: string) => {
-    return apiClient.patch<void>(
-      `${RIDER_HOME_BASE}/orders/${orderId}/offers/decline`,
-    );
-  },
-
   updateLiveLocation: async (
     orderId: string,
     payload: {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -17,7 +17,8 @@ import { useTranslations } from '../../localization/LocalizationProvider';
 import Text from '../../components/Text';
 import ToggleSwitch from '../../components/ToggleSwitch';
 import { useRiderProfileQuery } from '../../hooks/useRiderProfileQuery';
-import { useLogoutMutation } from '../../hooks/useAuthMutations';
+import { useRiderAvailability } from '../../hooks/useRiderAvailability';
+import { useConfirmLogout } from '../../hooks/useConfirmLogout';
 import { MainStackParamList } from '../../navigation/types';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../api/apiClient';
@@ -42,12 +43,12 @@ export default function ProfileScreen() {
   const { t } = useTranslations('app');
   const navigation = useNavigation<NativeStackNavigationProp<MainStackParamList>>();
   const { data: profileData, isLoading: profileLoading } = useRiderProfileQuery();
-  const logoutMutation = useLogoutMutation();
+  const { confirmLogout, isPending: isLoggingOut } = useConfirmLogout();
   const notificationCount = useQuery({
     queryKey: ['rider-notification-count'],
     queryFn: () => apiClient.get<{ unreadCount: number }>('/apps/deliveries/users-notifications/count-unread'),
   });
-  const [availability, setAvailability] = useState(true);
+  const { availability, setAvailability, isPending: isAvailabilityPending } = useRiderAvailability();
 
   if (profileLoading) {
     return (
@@ -192,7 +193,7 @@ export default function ProfileScreen() {
             </View>
           </View>
           <View style={styles.availabilityRight}>
-            <ToggleSwitch value={availability} onValueChange={setAvailability} />
+            <ToggleSwitch value={availability} onValueChange={setAvailability} disabled={isAvailabilityPending} />
             <Text style={[styles.availableText, { color: theme.colors.gray600 }]}>
               {availability ? t('menu_available') : t('menu_unavailable')}
             </Text>
@@ -249,15 +250,15 @@ export default function ProfileScreen() {
 
         <Pressable
           style={[styles.logoutCard, { borderColor: theme.colors.gray300, backgroundColor: theme.colors.red100 }]}
-          onPress={() => logoutMutation.mutate()}
-          disabled={logoutMutation.isPending}
+          onPress={confirmLogout}
+          disabled={isLoggingOut}
         >
           <View style={[styles.iconCircleDanger, { backgroundColor: theme.colors.surface }]}>
             <Image source={rowIcons.logout} style={styles.rowIconImage} resizeMode="contain" />
           </View>
           <View style={styles.menuTextWrap}>
             <Text weight="semiBold" style={[styles.logoutTitle, { color: theme.colors.red500 }]}>
-              {logoutMutation.isPending ? t('auth_logout_loading') : t('auth_logout')}
+              {isLoggingOut ? t('auth_logout_loading') : t('auth_logout')}
             </Text>
             <Text style={[styles.menuSubtitle, { color: theme.colors.gray600 }]}>Sign out from your account</Text>
           </View>

@@ -63,7 +63,12 @@ export default function NotificationsScreen({ navigation }: Props) {
       markRead.mutate(item.id);
     }
     const orderId = item.data?.orderId ?? item.deep_link?.match(/^\/orders\/([0-9a-f-]{36})$/i)?.[1];
-    if (orderId) navigation.navigate('ProcessingOrderDetail', { orderId });
+    if (!orderId) return;
+    if (item.data?.type === 'zone_order_available') {
+      navigation.navigate('Home', { screen: 'HomeTab', params: { focusedOffer: { orderId } } });
+    } else {
+      navigation.navigate('ProcessingOrderDetail', { orderId });
+    }
   }, [markRead, navigation]);
 
   const unreadCount = items.filter((item) => !item.isRead).length;
