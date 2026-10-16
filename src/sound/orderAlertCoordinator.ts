@@ -7,6 +7,7 @@ type NewOrderEvent = {
   userId: string;
   orderId: string;
   occurredAt: string;
+  kind?: 'offer' | 'assignment';
   expiresAt?: string;
   allowOlderEvent?: boolean;
 };
@@ -45,8 +46,9 @@ export function alertForNewRiderOrder(event: NewOrderEvent): Promise<boolean> {
     const seen = await load(event.userId);
     if (requestEpoch !== epoch || AppState.currentState !== 'active') return false;
     seen.orders = Object.fromEntries(Object.entries(seen.orders).filter(([, at]) => now - at < SEEN_TTL_MS));
-    if (seen.orders[event.orderId]) return false;
-    seen.orders[event.orderId] = now;
+    const alertKey = event.kind === 'assignment' ? `assignment:${event.orderId}` : event.orderId;
+    if (seen.orders[alertKey]) return false;
+    seen.orders[alertKey] = now;
     if (Object.keys(seen.orders).length > 5000) {
       seen.orders = Object.fromEntries(Object.entries(seen.orders).sort((a, b) => a[1] - b[1]).slice(-5000));
     }

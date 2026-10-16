@@ -48,11 +48,9 @@ class NewOrderBeepManager {
       this.sound = sound;
       await new Promise<void>((resolve) => {
         let finished = false;
-        let timeout: ReturnType<typeof setTimeout> | null = null;
         const finish = () => {
           if (finished) return;
           finished = true;
-          if (timeout) clearTimeout(timeout);
           if (this.sound === sound) this.sound = null;
           if (this.finishCurrent === finish) this.finishCurrent = null;
           sound.setOnPlaybackStatusUpdate(null);
@@ -60,7 +58,6 @@ class NewOrderBeepManager {
           resolve();
         };
         this.finishCurrent = finish;
-        timeout = setTimeout(finish, 5500);
         sound.setOnPlaybackStatusUpdate((status) => {
           if (status.isLoaded && status.didJustFinish) finish();
           if (!status.isLoaded && status.error) finish();

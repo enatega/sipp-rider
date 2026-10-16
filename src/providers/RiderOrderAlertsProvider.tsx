@@ -124,6 +124,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       userId,
       orderId: assignment.orderId,
       occurredAt: assignment.occurredAt,
+      kind: 'assignment',
     });
     closedOfferIds.current.add(assignment.orderId);
     setAlerts((current) => {
