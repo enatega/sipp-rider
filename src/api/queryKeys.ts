@@ -17,8 +17,8 @@ export const earningsKeys = {
   all: ['earnings'] as const,
   summary: (groupBy: 'day' | 'week' | 'month', recentLimit: number) =>
     [...earningsKeys.all, 'summary', groupBy, recentLimit] as const,
-  activities: (page: number, limit: number) =>
-    [...earningsKeys.all, 'activities', page, limit] as const,
+  activities: (page: number, limit: number, startDate?: string, endDate?: string) =>
+    [...earningsKeys.all, 'activities', page, limit, startDate, endDate] as const,
   activityDeliveries: (activityDate: string) =>
     [...earningsKeys.all, 'activityDeliveries', activityDate] as const,
 };

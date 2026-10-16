@@ -4,6 +4,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import TopSegmentedTabs from '../components/TopSegmentedTabs';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { useTranslations } from '../localization/LocalizationProvider';
@@ -12,10 +13,12 @@ import { useRiderProfileQuery } from '../hooks/useRiderProfileQuery';
 import RiderOrdersList from './home/RiderOrdersList';
 import { RiderOrderTab } from '../api/riderHomeTypes';
 import Text from '../components/Text';
-import { useLogoutMutation } from '../hooks/useAuthMutations';
+import { useConfirmLogout } from '../hooks/useConfirmLogout';
 import type { RiderTabParamList } from '../navigation/MainTabsNavigator';
 import type { MainStackParamList } from '../navigation/types';
 import OrderFlowNotice from '../components/OrderFlowNotice';
+import { useRiderOrderAlerts } from '../providers/RiderOrderAlertsProvider';
+import { useAuth } from '../auth/AuthProvider';
 
 type HomeFilter = RiderOrderTab;
 type AssignedOrder = { orderId: string; orderCode: string; storeName: string | null };
@@ -24,13 +27,22 @@ export default function HomeScreen() {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const [homeFilter, setHomeFilter] = useState<HomeFilter>('new');
+  const [visitedTabs, setVisitedTabs] = useState<HomeFilter[]>(['new']);
   const [assignedOrder, setAssignedOrder] = useState<AssignedOrder | null>(null);
   const [completedOrder, setCompletedOrder] = useState<{ orderCode: string } | null>(null);
+  const [focusedOffer, setFocusedOffer] = useState<{ orderId: string; orderCode?: string } | null>(null);
   const route = useRoute<RouteProp<RiderTabParamList, 'HomeTab'>>();
   const navigation = useNavigation<BottomTabNavigationProp<RiderTabParamList>>();
   const summaryQuery = useRiderHomeSummaryQuery();
   const profileQuery = useRiderProfileQuery();
-  const logoutMutation = useLogoutMutation();
+  const { closeOffer } = useRiderOrderAlerts();
+  const { session } = useAuth();
+  const { confirmLogout, isPending: isLoggingOut } = useConfirmLogout();
+  const mountedTabs = visitedTabs.includes(homeFilter) ? visitedTabs : [...visitedTabs, homeFilter];
+
+  useEffect(() => {
+    setVisitedTabs((current) => current.includes(homeFilter) ? current : [...current, homeFilter]);
+  }, [homeFilter]);
 
   useEffect(() => {
     if (!route.params?.assignedOrder) return;
@@ -48,11 +60,21 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!route.params?.completedOrder) return;
     setHomeFilter('delivered');
+    setAssignedOrder(null);
     setCompletedOrder(route.params.completedOrder);
     navigation.setParams({ completedOrder: undefined });
   }, [navigation, route.params?.completedOrder]);
 
+  useEffect(() => {
+    if (!route.params?.focusedOffer) return;
+    setHomeFilter('new');
+    setFocusedOffer(route.params.focusedOffer);
+    navigation.setParams({ focusedOffer: undefined });
+  }, [navigation, route.params?.focusedOffer]);
+
   const handleAssigned = (order: AssignedOrder) => {
+    closeOffer(order.orderId);
+    setFocusedOffer(null);
     setHomeFilter('processing');
     setAssignedOrder(order);
   };
@@ -92,12 +114,12 @@ export default function HomeScreen() {
                 {t('home_orders_hidden_unapproved')}
               </Text>
               <Pressable
-                onPress={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
+                onPress={confirmLogout}
+                disabled={isLoggingOut}
                 style={[styles.logoutButton, { backgroundColor: theme.colors.red500 }]}
               >
                 <Text weight="semiBold" color={theme.colors.white}>
-                  {logoutMutation.isPending ? t('auth_logout_loading') : t('auth_logout')}
+                  {isLoggingOut ? t('auth_logout_loading') : t('auth_logout')}
                 </Text>
               </Pressable>
             </View>
@@ -117,19 +139,44 @@ export default function HomeScreen() {
       <TopSegmentedTabs
         tabs={filterTabs}
         activeTab={homeFilter}
-        onChange={setHomeFilter}
+        onChange={(tab) => {
+          if (tab !== 'new') setFocusedOffer(null);
+          setHomeFilter(tab);
+        }}
         labelMap={filterLabelMap}
         countMap={filterCountMap}
       />
 
-      <RiderOrdersList tab={homeFilter} onAssigned={handleAssigned} />
+      {homeFilter === 'new' && focusedOffer ? (
+        <View style={styles.focusRow}>
+          <View style={[styles.focusPill, { backgroundColor: theme.isDark ? theme.colors.gray200 : theme.colors.sky100 }]}>
+            <Feather name="filter" size={15} color={theme.colors.sky600} />
+            <Text weight="semiBold" style={[styles.focusCode, { color: theme.colors.sky600 }]}>
+              #{(focusedOffer.orderCode || focusedOffer.orderId.split('-')[0]).replace(/^#/, '').toUpperCase()}
+            </Text>
+            <View style={[styles.focusDivider, { backgroundColor: theme.colors.sky600 }]} />
+            <Pressable accessibilityRole="button" accessibilityLabel={t('orders_focus_clear')} onPress={() => setFocusedOffer(null)} hitSlop={8} style={styles.focusClear}>
+              <Feather name="x" size={18} color={theme.colors.sky600} />
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+
+      {mountedTabs.map((tab) => <View key={tab} style={{ flex: 1, display: tab === homeFilter ? 'flex' : 'none' }}>
+        <RiderOrdersList
+          tab={tab}
+          alertUserId={session.user?.id ?? null}
+          canAlertNewOrders={profileQuery.data?.availabilityStatus === 'online'}
+          onAssigned={handleAssigned}
+          focusedOrderId={tab === 'new' ? focusedOffer?.orderId : undefined}
+          highlightedOrderCode={tab === 'processing' ? assignedOrder?.orderCode : tab === 'delivered' ? completedOrder?.orderCode : null}
+        />
+      </View>)}
       <OrderFlowNotice
         visible={Boolean(assignedOrder)}
         orderCode={assignedOrder?.orderCode}
         title={t('rider_flow_assigned_title')}
-        message={t('rider_flow_assigned_message', { store: assignedOrder?.storeName || t('chat_store_name') })}
         actionLabel={t('rider_flow_view_delivery')}
-        closeLabel={t('rider_flow_stay_pickup')}
         onAction={viewAssignedOrder}
         onClose={() => setAssignedOrder(null)}
       />
@@ -137,14 +184,7 @@ export default function HomeScreen() {
         visible={Boolean(completedOrder)}
         orderCode={completedOrder?.orderCode}
         title={t('order_well_done_rider')}
-        message={t('rider_flow_delivered_message')}
-        actionLabel={t('rider_flow_view_completed')}
-        closeLabel={t('order_pick_next_order')}
-        onAction={() => setCompletedOrder(null)}
-        onClose={() => {
-          setCompletedOrder(null);
-          setHomeFilter('new');
-        }}
+        onClose={() => setCompletedOrder(null)}
       />
     </SafeAreaView>
   );
@@ -196,4 +236,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
+  focusRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingTop: 8 },
+  focusPill: { minHeight: 40, borderRadius: 20, paddingLeft: 12, paddingRight: 4, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  focusCode: { fontSize: 14, lineHeight: 18 },
+  focusDivider: { width: StyleSheet.hairlineWidth, height: 18, opacity: 0.35 },
+  focusClear: { width: 32, minHeight: 40, alignItems: 'center', justifyContent: 'center' },
 });

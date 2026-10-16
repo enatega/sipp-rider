@@ -33,6 +33,7 @@ export type RiderOrderAvailablePayload = {
   status: string;
   updatedAt: string;
   expiresAt: string;
+  sentAt?: string;
 };
 
 export type RiderLocationUpdatePayload = {

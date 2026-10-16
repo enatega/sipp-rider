@@ -61,10 +61,11 @@ export function useRiderOrderSocketSync() {
         console.log("[rider][socket] order-status-updated received", payload);
         if (!payload?.orderId) return;
         if (payload.status === 'rider_assigned') {
-          removeOrderFromNewOrdersCache(queryClient, payload.orderId);
-          applyAssignedSummaryCounts(queryClient);
+          if (removeOrderFromNewOrdersCache(queryClient, payload.orderId)) {
+            applyAssignedSummaryCounts(queryClient);
+          }
           if (payload.assignmentType === 'manual') {
-            receiveAssignment({ orderId: payload.orderId });
+            receiveAssignment({ orderId: payload.orderId, occurredAt: payload.updatedAt });
           } else {
             closeOffer(payload.orderId);
           }
@@ -138,13 +139,7 @@ export function useRiderOrderSocketSync() {
 
     let appState = AppState.currentState;
     const appStateSubscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      const wasActive = appState === 'active';
       appState = nextState;
-
-      if (wasActive && nextState !== 'active') {
-        riderOrdersSocketClient.disconnect();
-        return;
-      }
 
       if (nextState === 'active') {
         riderOrdersSocketClient.connect();

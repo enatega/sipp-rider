@@ -7,6 +7,7 @@ import { lightColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { RiderEarningsActivity } from '../api/earningsTypes';
 import { useAppCurrency } from '../hooks/useCurrency';
+import { formatEarningsDate } from '../utils/earningsDates';
 
 export type EarningsActivityRowItem = {
   id: string;
@@ -54,7 +55,7 @@ export default function EarningsActivityRow<T extends EarningsActivityRenderable
       <View style={styles.rowContent}>
         <View style={styles.leftGroup}>
           <Text variant="caption" color={lightColors.gray900} style={styles.metaText} numberOfLines={1}>
-            {getActivityDate(item)}
+            {formatEarningsDate(getActivityDate(item))}
           </Text>
           <Text variant="caption" weight="semiBold" color={lightColors.gray900} style={[styles.metaText, { fontWeight: 'bold' }]} numberOfLines={1}>
             {getActivityTitle(item, t('earnings_total_earning'))}

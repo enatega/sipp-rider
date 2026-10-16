@@ -8,13 +8,13 @@ import React, {
   useState,
 } from 'react';
 import * as Notifications from 'expo-notifications';
-import { AppState, Vibration } from 'react-native';
+import { AppState } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../auth/AuthProvider';
 import { riderHomeKeys } from '../api/queryKeys';
 import type { RiderOrderAvailablePayload } from '../socket/riderOrdersSocket';
-import { newOrderBeepManager } from '../sound/newOrderBeep';
-import { queueOrderNotificationNavigation } from '../navigation/notificationNavigation';
+import { alertForNewRiderOrder, stopRiderOrderAlerts } from '../sound/orderAlertCoordinator';
+import { queueOfferNotificationNavigation, queueOrderNotificationNavigation } from '../navigation/notificationNavigation';
 
 export type RiderOrderAlert =
   | ({ kind: 'offer'; expiresAt: number } & Omit<RiderOrderAvailablePayload, 'expiresAt'>)
@@ -29,11 +29,11 @@ type AssignmentInput = {
   orderId: string;
   orderCode?: string | null;
   storeName?: string | null;
+  occurredAt?: string;
 };
 
 type RiderOrderAlertsContextValue = {
   alerts: RiderOrderAlert[];
-  currentAlert: RiderOrderAlert | null;
   receiveOffer: (offer: RiderOrderAvailablePayload) => void;
   receiveAssignment: (assignment: AssignmentInput) => void;
   closeOffer: (orderId: string) => void;
@@ -64,7 +64,8 @@ function notificationDataToOffer(
     orderAmount: Number(data.orderAmount || 0),
     zoneId: typeof data.zoneId === 'string' ? data.zoneId : '',
     status: 'accepted',
-    updatedAt: new Date().toISOString(),
+    updatedAt: typeof data.sentAt === 'string' ? data.sentAt : '',
+    sentAt: typeof data.sentAt === 'string' ? data.sentAt : '',
     expiresAt:
       typeof data.expiresAt === 'string'
         ? data.expiresAt
@@ -74,10 +75,10 @@ function notificationDataToOffer(
 
 export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) {
   const queryClient = useQueryClient();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, session } = useAuth();
   const [alerts, setAlerts] = useState<RiderOrderAlert[]>([]);
-  const hasOffer = alerts.some((alert) => alert.kind === 'offer');
   const closedOfferIds = useRef(new Set<string>());
+  const userId = session.user?.id ?? null;
 
   const invalidateOrders = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: riderHomeKeys.summary() });
@@ -95,6 +96,13 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       return;
     }
 
+    if (userId) void alertForNewRiderOrder({
+      userId,
+      orderId: offer.orderId,
+      occurredAt: offer.sentAt || offer.updatedAt,
+      expiresAt: offer.expiresAt,
+    });
+
     setAlerts((current) => {
       if (current.some((alert) => alert.kind === 'offer' && alert.orderId === offer.orderId)) {
         return current;
@@ -102,7 +110,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       return [...current, { ...offer, kind: 'offer', expiresAt }];
     });
     invalidateOrders();
-  }, [invalidateOrders]);
+  }, [invalidateOrders, userId]);
 
   const closeOffer = useCallback((orderId: string) => {
     closedOfferIds.current.add(orderId);
@@ -112,6 +120,12 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
   }, []);
 
   const receiveAssignment = useCallback((assignment: AssignmentInput) => {
+    if (userId && assignment.occurredAt) void alertForNewRiderOrder({
+      userId,
+      orderId: assignment.orderId,
+      occurredAt: assignment.occurredAt,
+      kind: 'assignment',
+    });
     closedOfferIds.current.add(assignment.orderId);
     setAlerts((current) => {
       const withoutOffer = current.filter(
@@ -134,7 +148,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       return next;
     });
     invalidateOrders();
-  }, [invalidateOrders]);
+  }, [invalidateOrders, userId]);
 
   const dismissAssignment = useCallback((orderId: string) => {
     setAlerts((current) =>
@@ -146,6 +160,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
 
   const clearAlerts = useCallback(() => {
     closedOfferIds.current.clear();
+    stopRiderOrderAlerts();
     setAlerts([]);
   }, []);
 
@@ -171,31 +186,20 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
   }, []);
 
   useEffect(() => {
-    const syncAlert = () => {
-      const hasActiveOffer = AppState.currentState === 'active' && hasOffer;
-      if (hasActiveOffer) {
-        void newOrderBeepManager.start();
-        Vibration.vibrate([0, 500, 500], true);
-      } else {
-        void newOrderBeepManager.stop();
-        Vibration.cancel();
-      }
-    };
-
-    syncAlert();
-    const subscription = AppState.addEventListener('change', syncAlert);
-    return () => {
-      subscription.remove();
-      void newOrderBeepManager.stop();
-      Vibration.cancel();
-    };
-  }, [hasOffer]);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') stopRiderOrderAlerts();
+    });
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
-    const handleNotification = (notification: Notifications.Notification) => {
-      const data = notification.request.content.data as Record<string, unknown>;
+    const refreshNotificationQueries = () => {
       void queryClient.invalidateQueries({ queryKey: ['rider-notifications'] });
       void queryClient.invalidateQueries({ queryKey: ['rider-notification-count'] });
+    };
+    const handleNotification = (notification: Notifications.Notification) => {
+      const data = notification.request.content.data as Record<string, unknown>;
+      refreshNotificationQueries();
       if (!notification.request.content.title?.trim() || !notification.request.content.body?.trim()) return;
       if (data.type === 'zone_order_available') {
         const offer = notificationDataToOffer(data);
@@ -210,6 +214,7 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
             orderId,
             orderCode: typeof data.orderCode === 'string' ? data.orderCode : null,
             storeName: typeof data.storeName === 'string' ? data.storeName : null,
+            occurredAt: typeof data.sentAt === 'string' ? data.sentAt : '',
           });
         }
       }
@@ -217,17 +222,25 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
 
     const received = Notifications.addNotificationReceivedListener(handleNotification);
     const opened = Notifications.addNotificationResponseReceivedListener((response) => {
-      handleNotification(response.notification);
+      refreshNotificationQueries();
       const data = response.notification.request.content.data as Record<string, unknown>;
-      if (data.type !== 'zone_order_available' && data.assignmentType !== 'broadcast_claim') {
+      if (data.type === 'zone_order_available') {
+        if (typeof data.orderId === 'string') closeOffer(data.orderId);
+        queueOfferNotificationNavigation(data.orderId, data.orderCode);
+      } else if (data.assignmentType !== 'broadcast_claim') {
+        if (typeof data.orderId === 'string') dismissAssignment(data.orderId);
         queueOrderNotificationNavigation(data.orderId);
       }
     });
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!response) return;
-      handleNotification(response.notification);
+      refreshNotificationQueries();
       const data = response.notification.request.content.data as Record<string, unknown>;
-      if (data.type !== 'zone_order_available' && data.assignmentType !== 'broadcast_claim') {
+      if (data.type === 'zone_order_available') {
+        if (typeof data.orderId === 'string') closeOffer(data.orderId);
+        queueOfferNotificationNavigation(data.orderId, data.orderCode);
+      } else if (data.assignmentType !== 'broadcast_claim') {
+        if (typeof data.orderId === 'string') dismissAssignment(data.orderId);
         queueOrderNotificationNavigation(data.orderId);
       }
       void Notifications.clearLastNotificationResponseAsync();
@@ -237,12 +250,11 @@ export function RiderOrderAlertsProvider({ children }: React.PropsWithChildren) 
       received.remove();
       opened.remove();
     };
-  }, [closeOffer, queryClient, receiveAssignment, receiveOffer]);
+  }, [closeOffer, dismissAssignment, queryClient, receiveAssignment, receiveOffer]);
 
   const value = useMemo<RiderOrderAlertsContextValue>(
     () => ({
       alerts,
-      currentAlert: alerts[0] ?? null,
       receiveOffer,
       receiveAssignment,
       closeOffer,

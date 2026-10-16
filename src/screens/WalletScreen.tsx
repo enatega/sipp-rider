@@ -124,6 +124,8 @@ export default function WalletScreen() {
           <View style={styles.listHeader}>
             <WalletBalanceCard
               currentBalance={balanceQuery.data?.current_balance ?? 0}
+              availableBalance={balanceQuery.data?.available_amount ?? 0}
+              availableLabel={t('wallet_available_amount')}
               onWithdrawPress={onOpenWithdraw}
               withdrawLabel={t('wallet_withdraw_now')}
               balanceLabel={t('wallet_current_balance')}
@@ -135,7 +137,10 @@ export default function WalletScreen() {
                   {t('wallet_pending_request')}
                 </Text>
                 <Text style={{ color: theme.colors.gray600 }}>
-                  {formatCurrency(balanceQuery.data.pending_request.amount)} · {balanceQuery.data.pending_request.status}
+                  {formatCurrency(balanceQuery.data.pending_request.amount)} · {t('wallet_pending_status')}
+                </Text>
+                <Text style={{ color: theme.colors.gray600 }}>
+                  {new Date(balanceQuery.data.pending_request.requested_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                 </Text>
               </View>
             ) : null}
@@ -148,6 +153,8 @@ export default function WalletScreen() {
         ListEmptyComponent={
           historyQuery.isLoading ? (
             <View style={styles.centered}><ActivityIndicator color={theme.colors.primary} /></View>
+          ) : historyQuery.isError ? (
+            <View style={styles.centered}><Text style={{ color: theme.colors.gray700 }}>{t('wallet_history_error')}</Text></View>
           ) : (
             <View style={styles.centered}>
               <Text style={{ color: theme.colors.gray500 }}>{t('wallet_no_transactions')}</Text>
@@ -224,8 +231,8 @@ const styles = StyleSheet.create({
   },
   pendingCard: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    gap: 4,
+    borderRadius: 12,
+    padding: 16,
+    gap: 6,
   },
 });

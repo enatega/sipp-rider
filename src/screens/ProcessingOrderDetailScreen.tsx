@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Linking, Pressable, ScrollView, StyleSheet, View, type AppStateStatus } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView, StyleSheet, View, type AppStateStatus } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useIsFocused } from '@react-navigation/native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,7 +8,6 @@ import Map from '../components/Map';
 import Text from '../components/Text';
 import Button from '../components/Button';
 import OrderConversationButton from '../components/OrderConversationButton';
-import OrderFlowNotice from '../components/OrderFlowNotice';
 import PhoneIcon from '../assets/svgs/phone.svg';
 import { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
@@ -62,17 +61,9 @@ const NEXT_STATUS_KEY: Record<RiderDeliveryProgressStatus, string> = {
   [RiderDeliveryProgressStatus.FAILED]: 'order_status_failed',
 };
 
-const STEP_VALUE: Record<RiderDeliveryProgressStatus, number> = {
-  [RiderDeliveryProgressStatus.ASSIGNED]: 2,
-  [RiderDeliveryProgressStatus.HEADING_TO_STORE]: 3,
-  [RiderDeliveryProgressStatus.ARRIVED_AT_STORE]: 4,
-  [RiderDeliveryProgressStatus.WAITING_FOR_ORDER]: 5,
-  [RiderDeliveryProgressStatus.PICKED_UP]: 6,
-  [RiderDeliveryProgressStatus.OUT_FOR_DELIVERY]: 7,
-  [RiderDeliveryProgressStatus.ARRIVED_AT_CUSTOMER]: 8,
-  [RiderDeliveryProgressStatus.DELIVERED]: 8,
-  [RiderDeliveryProgressStatus.FAILED]: 8,
-};
+const STANDARD_PROGRESS_ORDER = DELIVERY_PROGRESS_ORDER.filter(
+  (status) => status !== RiderDeliveryProgressStatus.FAILED,
+);
 
 const NEXT_UPDATE_STATUS: Partial<Record<RiderDeliveryProgressStatus, RiderOrderUpdatableStatus>> = {
   [RiderDeliveryProgressStatus.ASSIGNED]: 'heading_to_store',
@@ -85,28 +76,6 @@ const NEXT_UPDATE_STATUS: Partial<Record<RiderDeliveryProgressStatus, RiderOrder
 
 const STATUS_BUTTON_LABEL_KEY: Record<RiderOrderUpdatableStatus, string> = {
   heading_to_store: 'order_begin_trip_to_store',
-  arrived_at_store: 'order_status_arrived_at_store',
-  waiting_for_order: 'order_status_waiting_for_order',
-  picked_up: 'order_status_picked_up',
-  out_for_delivery: 'order_status_out_for_delivery',
-  arrived: 'order_status_arrived_at_customer',
-  delivered: 'order_status_delivered',
-  failed: 'order_status_failed',
-};
-
-const STATUS_NOTICE_MESSAGE_KEY: Record<RiderOrderUpdatableStatus, string> = {
-  heading_to_store: 'rider_flow_heading_message',
-  arrived_at_store: 'rider_flow_arrived_store_message',
-  waiting_for_order: 'rider_flow_waiting_message',
-  picked_up: 'rider_flow_picked_up_message',
-  out_for_delivery: 'rider_flow_out_for_delivery_message',
-  arrived: 'rider_flow_arrived_customer_message',
-  delivered: 'rider_flow_delivered_message',
-  failed: 'rider_flow_failed_message',
-};
-
-const STATUS_NOTICE_TITLE_KEY: Record<RiderOrderUpdatableStatus, string> = {
-  heading_to_store: 'order_status_heading_to_store',
   arrived_at_store: 'order_status_arrived_at_store',
   waiting_for_order: 'order_status_waiting_for_order',
   picked_up: 'order_status_picked_up',
@@ -141,7 +110,6 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const chatUnreadQuery = useRiderOrderChatUnreadQuery();
   const chatUnreadCounts = chatUnreadQuery.data?.byOrderAndKind?.[orderId];
   const updateStatusMutation = useUpdateRiderOrderStatusMutation(orderId);
-  const [statusNotice, setStatusNotice] = useState<RiderOrderUpdatableStatus | null>(null);
   const [isRequestingLocationPermission, setIsRequestingLocationPermission] = useState(false);
   const [locationPermissionIssue, setLocationPermissionIssue] = useState<'foreground' | 'background' | null>(null);
   const [canAskLocationAgain, setCanAskLocationAgain] = useState(true);
@@ -253,7 +221,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
 
     mapRef.current?.fitToCoordinates(visibleMapCoordinates, {
       animated: true,
-      edgePadding: { top: 64, right: 48, bottom: 280, left: 48 },
+      edgePadding: { top: 200, right: 48, bottom: 270, left: 48 },
     });
   }, [visibleMapCoordinates]);
 
@@ -311,11 +279,21 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       || nextUpdateStatus === 'waiting_for_order')
     && ['accepted', 'preparing', 'ready', 'rider_assigned'].includes(serverOrderStatus ?? '');
   const nextTitle = t(getNextStatusTitleKey(currentProgressStatus, nextUpdateStatus));
-  const step = STEP_VALUE[currentProgressStatus];
-  const currentIndex = DELIVERY_PROGRESS_ORDER.indexOf(currentProgressStatus);
+  const currentIndex = STANDARD_PROGRESS_ORDER.indexOf(currentProgressStatus);
+  const step = currentIndex >= 0 ? currentIndex + 1 : STANDARD_PROGRESS_ORDER.length;
+  const isFailed = currentProgressStatus === RiderDeliveryProgressStatus.FAILED;
+  const progressTimeline = currentProgressStatus === RiderDeliveryProgressStatus.FAILED
+    ? [RiderDeliveryProgressStatus.FAILED]
+    : STANDARD_PROGRESS_ORDER;
+  const timelineCurrentIndex = progressTimeline.indexOf(currentProgressStatus);
+  const destinationName = isLiveTrackingStatus
+    ? detailQuery.data?.customerName?.trim() || t('chat_customer_name')
+    : detailQuery.data?.storeName?.trim() || t('chat_store_name');
+  const destinationAddress = isLiveTrackingStatus
+    ? detailQuery.data?.deliveryAddress
+    : detailQuery.data?.pickupAddress;
   const canUpdateStatus =
     detailQuery.data?.canUpdateStatus === true || shouldAllowReadyFallback || canUpdateRiderTravelStatus;
-  const isDelivered = currentProgressStatus === RiderDeliveryProgressStatus.DELIVERED;
   const isAtStore =
     currentProgressStatus === RiderDeliveryProgressStatus.ARRIVED_AT_STORE
     || currentProgressStatus === RiderDeliveryProgressStatus.WAITING_FOR_ORDER;
@@ -340,9 +318,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
 
   const handlePrimaryAction = async () => {
     if (nextUpdateStatus === 'heading_to_store') {
-      if (canUpdateStatus) updateStatusMutation.mutate({ status: 'heading_to_store' }, {
-        onSuccess: () => setStatusNotice('heading_to_store'),
-      });
+      if (canUpdateStatus) updateStatusMutation.mutate({ status: 'heading_to_store' });
       return;
     }
     if (waitingForStoreReadyToPickup || !canUpdateStatus) return;
@@ -381,8 +357,6 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                 screen: 'HomeTab',
                 params: { completedOrder: { orderCode: detailQuery.data?.orderCode ?? '' } },
               });
-            } else {
-              setStatusNotice(nextUpdateStatus);
             }
           },
           onError: (error) => {
@@ -419,14 +393,6 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
     }
   };
 
-  const closeDeliveredModal = () => {
-    navigation.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'delivered' } });
-  };
-
-  const findNextOrder = () => {
-    navigation.navigate('Home', { screen: 'HomeTab', params: { preferredTab: 'new' } });
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.white }]} edges={['top']}>
       <Map
@@ -458,49 +424,14 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
         onLayout={(event) => setHeaderHeight(event.nativeEvent.layout.height)}
         style={[styles.headerWrap, { backgroundColor: theme.colors.white, borderBottomColor: theme.colors.gray200 }]}
       >
-        <OrderDetailTopBar title={currentTitle ?? t('order_assigned_title')} onBack={() => navigation.goBack()} />
+        <OrderDetailTopBar title={detailQuery.data?.orderCode || `#${orderId.split('-')[0].toUpperCase()}`} onBack={() => navigation.goBack()} />
       </View>
 
       <View style={styles.progressCardWrap}>
-        {showStorePreparingAlert ? (
-          <View
-            style={[
-              styles.alertCard,
-              { backgroundColor: theme.colors.sky100, borderColor: theme.colors.sky600 },
-            ]}
-          >
-            <View style={styles.alertTitleRow}>
-              <InfoCircleIcon color={theme.colors.sky600} />
-              <Text variant="subtitle" weight="medium" color={theme.colors.sky600}>
-                {t('order_alert_store_preparing_title')}
-              </Text>
-            </View>
-            <Text variant="label" color={theme.colors.gray600}>
-              {t('order_alert_store_preparing_desc')}
-            </Text>
-          </View>
-        ) : null}
-
-        {showReadyForPickupAlert ? (
-          <View
-            style={[
-              styles.alertCard,
-              { backgroundColor: theme.colors.green50, borderColor: theme.colors.green600 },
-            ]}
-          >
-            <View style={styles.alertTitleRow}>
-              <CheckCircleIcon color={theme.colors.green600} />
-              <Text variant="subtitle" weight="medium" color={theme.colors.green600}>
-                {t('order_alert_ready_pickup_title')}
-              </Text>
-            </View>
-          </View>
-        ) : null}
-
         <View
           style={[
             styles.progressCard,
-            { backgroundColor: theme.colors.gray100, borderColor: theme.colors.gray200, shadowColor: theme.colors.shadow },
+            { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow },
           ]}
         >
           {detailQuery.isLoading ? (
@@ -508,115 +439,74 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
               <ActivityIndicator color={theme.colors.primary} />
             </View>
           ) : detailQuery.isError ? (
-            <Text variant="label" color={theme.colors.gray600}>{detailQuery.error?.message ?? t('orders_empty')}</Text>
+            <Pressable accessibilityRole="button" onPress={() => void detailQuery.refetch()} style={styles.detailRetry}>
+              <Text variant="label" color={theme.colors.gray700}>{detailQuery.error?.message ?? t('orders_empty')}</Text>
+              <Text variant="caption" weight="bold" color={theme.colors.sky600}>{t('orders_retry')}</Text>
+            </Pressable>
           ) : (
             <>
-              <View style={styles.rowBetween}>
-                <Text variant="label" weight="medium" color={theme.colors.gray600}>{t('order_delivery_progress')}</Text>
-                <View style={styles.stepWrap}>
-                  <Text variant="caption" color={theme.colors.gray500}>{t('order_step')}</Text>
-                  <Text variant="label" weight="semiBold" color={theme.colors.gray700}>{`${step}/8`}</Text>
+              <View style={styles.statusHeading}>
+                <View style={styles.statusText}>
+                  <View style={styles.currentRow}>
+                    <View style={[styles.currentDot, { backgroundColor: currentProgressStatus === RiderDeliveryProgressStatus.FAILED ? theme.colors.red500 : theme.colors.sky600 }]} />
+                    <Text variant="subtitle" weight="bold" color={theme.colors.gray900} numberOfLines={2}>{currentTitle}</Text>
+                  </View>
+                  {currentProgressStatus !== RiderDeliveryProgressStatus.DELIVERED && currentProgressStatus !== RiderDeliveryProgressStatus.FAILED ? (
+                    <Text variant="caption" color={theme.colors.gray600} style={styles.nextStatus} numberOfLines={2}>
+                      {t('order_next', { status: nextTitle })}
+                    </Text>
+                  ) : null}
                 </View>
+                {!isFailed ? (
+                  <Text variant="caption" weight="semiBold" color={theme.colors.gray600} style={[styles.stepPill, { backgroundColor: theme.colors.gray100 }]}>
+                    {t('order_step')} {step}/{STANDARD_PROGRESS_ORDER.length}
+                  </Text>
+                ) : null}
               </View>
 
-              <View style={styles.currentRow}>
-                <View style={[styles.currentDot, { backgroundColor: theme.colors.primary }]} />
-                <Text variant="label" weight="semiBold" color={theme.colors.gray900}>{currentTitle}</Text>
-              </View>
-
-              <Text variant="caption" color={theme.colors.gray500}>{t('order_next', { status: nextTitle })}</Text>
-
-              <View style={styles.segmentsWrap}>
-                {Array.from({ length: 8 }).map((_, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.segment,
-                      { backgroundColor: theme.colors.gray250 },
-                    ]}
-                  >
+              {!isFailed ? (
+                <View style={styles.segmentsWrap}>
+                  {STANDARD_PROGRESS_ORDER.map((statusItem, index) => (
                     <View
+                      key={statusItem}
                       style={[
-                        styles.segmentFill,
-                        {
-                          width: index < step - 1 ? '100%' : index === step - 1 ? '50%' : '0%',
-                          backgroundColor: theme.colors.primary,
-                        },
+                        styles.segment,
+                        { backgroundColor: index < step ? theme.colors.sky600 : theme.colors.gray200 },
                       ]}
                     />
-                  </View>
-                ))}
-              </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {showStorePreparingAlert || showReadyForPickupAlert ? (
+                <View style={[styles.inlineNotice, { backgroundColor: showReadyForPickupAlert ? theme.colors.green50 : theme.colors.sky100 }]}>
+                  {showReadyForPickupAlert
+                    ? <CheckCircleIcon color={theme.colors.green600} />
+                    : <InfoCircleIcon color={theme.colors.sky600} />}
+                  <Text variant="caption" weight="semiBold" color={showReadyForPickupAlert ? theme.colors.green600 : theme.colors.sky600} style={styles.inlineNoticeText}>
+                    {t(showReadyForPickupAlert ? 'order_alert_ready_pickup_title' : 'order_alert_store_preparing_desc')}
+                  </Text>
+                </View>
+              ) : null}
 
               <Pressable
                 onPress={() => setTimelineOpen((value) => !value)}
-                style={[styles.timelineButton, { backgroundColor: theme.colors.gray150 }]}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: timelineOpen }}
+                style={[styles.timelineButton, { borderTopColor: theme.colors.gray200 }]}
               >
-                <Text variant="label" weight="medium" color={theme.colors.gray700}>
+                <Text variant="caption" weight="semiBold" color={theme.colors.gray700}>
                   {timelineOpen ? t('order_hide_timeline') : t('order_view_timeline')}
                 </Text>
-                <ChevronIcon up={timelineOpen} color={theme.colors.gray600} />
+                <ChevronIcon up={timelineOpen} color={theme.colors.gray700} />
               </Pressable>
 
-              {timelineOpen ? (
-                <ScrollView
-                  style={styles.timelineScroll}
-                  contentContainerStyle={styles.timelineWrap}
-                  nestedScrollEnabled
-                  showsVerticalScrollIndicator={false}
-                >
-                  {DELIVERY_PROGRESS_ORDER.map((statusItem, index) => {
-                    const isCompleted = index < currentIndex;
-                    const isCurrent = index === currentIndex;
-                    const showConnector = index < DELIVERY_PROGRESS_ORDER.length - 1;
-                    const itemTitle = t(STATUS_TITLE_KEY[statusItem]);
-                    const nextDescKey = NEXT_STATUS_KEY[statusItem];
-                    const itemDesc = statusItem === RiderDeliveryProgressStatus.DELIVERED
-                      ? t('order_status_desc_delivered')
-                      : t('order_next', { status: t(nextDescKey) });
-
-                    return (
-                      <View key={statusItem} style={styles.timelineRow}>
-                        <View style={styles.railCol}>
-                          <View
-                            style={[
-                              styles.railDot,
-                              {
-                                borderColor: isCompleted || isCurrent ? theme.colors.primary : theme.colors.gray250,
-                                backgroundColor: isCompleted ? theme.colors.primary : theme.colors.gray100,
-                              },
-                            ]}
-                          >
-                            {isCompleted ? <CheckIcon color={theme.colors.white} /> : null}
-                            {isCurrent ? <View style={[styles.currentInner, { backgroundColor: theme.colors.primary }]} /> : null}
-                          </View>
-                          {showConnector ? (
-                            <View
-                              style={[
-                                styles.railConnector,
-                                { backgroundColor: isCompleted ? theme.colors.primary : theme.colors.gray250 },
-                              ]}
-                            />
-                          ) : null}
-                        </View>
-                        <View style={styles.timelineText}>
-                          <Text variant="label" weight={isCurrent ? 'semiBold' : 'medium'} color={theme.colors.gray900}>
-                            {itemTitle}
-                          </Text>
-                          <Text variant="caption" color={theme.colors.gray600}>{itemDesc}</Text>
-                        </View>
-                        <Text variant="caption" weight="medium" color={theme.colors.gray500}>--:--</Text>
-                      </View>
-                    );
-                  })}
-                </ScrollView>
-              ) : null}
             </>
           )}
         </View>
       </View>
 
-      <View style={[styles.bottomControls, { bottom: Math.max(insets.bottom, 8) }]}>
+      {detailQuery.data ? <View style={styles.bottomControls}>
         {locationPermissionIssue && isLiveTrackingStatus ? (
           <View style={[styles.locationPermissionNotice, { backgroundColor: theme.colors.amber100 }]}>
             <Text variant="caption" color={theme.colors.amber800} style={styles.locationPermissionText}>
@@ -629,26 +519,26 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
             </Pressable>
           </View>
         ) : null}
-        <View style={styles.floatingRow}>
-          <Pressable style={[styles.navigateChip, { backgroundColor: theme.colors.zinc800 }]} onPress={openNavigation}>
-            <NavigationIcon color={theme.colors.white} />
-            <Text variant="label" weight="medium" color={theme.colors.white}>{t('order_navigate')}</Text>
-          </Pressable>
-
-          <View style={styles.actionsRow}>
+        <View style={[styles.ctaWrap, { backgroundColor: theme.colors.surface, paddingBottom: Math.max(insets.bottom, 12) + 12, shadowColor: theme.colors.shadow }]}>
+          <View style={styles.destinationRow}>
+            <View style={styles.destinationCopy}>
+              <Text variant="caption" weight="semiBold" color={theme.colors.gray600}>
+                {isLiveTrackingStatus ? t('chat_customer_name') : t('chat_store_name')}
+              </Text>
+              <Text variant="label" weight="bold" color={theme.colors.gray900} numberOfLines={1}>{destinationName}</Text>
+              {destinationAddress ? <Text variant="caption" color={theme.colors.gray600} numberOfLines={1}>{destinationAddress}</Text> : null}
+            </View>
             <Pressable
-              onPress={() => void openDialer()}
-              disabled={!detailQuery.data?.customerPhone}
+              style={[styles.navigateChip, { backgroundColor: theme.colors.zinc800 }, !navigationDestination && styles.disabledAction]}
+              onPress={() => void openNavigation()}
+              disabled={!navigationDestination}
               accessibilityRole="button"
-              accessibilityLabel={t('call_customer_action')}
-              style={[styles.roundAction, { borderColor: theme.colors.gray250, backgroundColor: theme.colors.white }]}
+              accessibilityLabel={t('order_navigate')}
             >
-              <PhoneIcon width={20} height={20} />
+              <NavigationIcon color={theme.colors.white} />
+              <Text variant="caption" weight="semiBold" color={theme.colors.white}>{t('order_navigate')}</Text>
             </Pressable>
           </View>
-        </View>
-
-        <View style={[styles.ctaWrap, { backgroundColor: theme.colors.gray100 }]}>
           <View style={styles.conversationActions}>
             <OrderConversationButton
               kind="store_rider"
@@ -660,6 +550,15 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
               unreadCount={chatUnreadCounts?.customer_rider ?? 0}
               onPress={() => openChat('customer_rider')}
             />
+            <Pressable
+              onPress={() => void openDialer()}
+              disabled={!detailQuery.data?.customerPhone}
+              accessibilityRole="button"
+              accessibilityLabel={t('call_customer_action')}
+              style={[styles.roundAction, { borderColor: theme.colors.gray200, backgroundColor: theme.colors.surface }, !detailQuery.data?.customerPhone && styles.disabledAction]}
+            >
+              <PhoneIcon width={20} height={20} />
+            </Pressable>
           </View>
           {isPrimaryActionDisabled && !updateStatusMutation.isPending && !waitingForStoreReadyToPickup && nextUpdateStatus ? (
             <Text variant="label" color={theme.colors.gray600} style={{ textAlign: 'center', marginBottom: 8 }}>
@@ -676,22 +575,66 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
             ]}
             textColor={waitingForStoreReadyToPickup ? theme.colors.white : theme.colors.gray900}
           />
+          {updateStatusMutation.isError ? (
+            <Text variant="caption" color={theme.colors.red500} style={styles.statusError}>
+              {updateStatusMutation.error.message}
+            </Text>
+          ) : null}
         </View>
-      </View>
+      </View> : null}
 
-      <OrderFlowNotice
-        visible={isDelivered || Boolean(statusNotice)}
-        tone={statusNotice === 'failed' ? 'error' : 'success'}
-        orderCode={detailQuery.data?.orderCode ?? undefined}
-        title={isDelivered ? t('order_well_done_rider') : statusNotice ? t(STATUS_NOTICE_TITLE_KEY[statusNotice]) : ''}
-        message={isDelivered
-          ? t('order_delivered_message', { code: detailQuery.data?.orderCode ?? '—' })
-          : statusNotice ? t(STATUS_NOTICE_MESSAGE_KEY[statusNotice]) : ''}
-        actionLabel={isDelivered ? t('rider_flow_view_completed') : t('rider_flow_continue')}
-        closeLabel={isDelivered ? t('order_pick_next_order') : undefined}
-        onAction={isDelivered ? closeDeliveredModal : () => setStatusNotice(null)}
-        onClose={isDelivered ? findNextOrder : () => setStatusNotice(null)}
-      />
+      <Modal
+        visible={timelineOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setTimelineOpen(false)}
+      >
+        <View style={styles.timelineOverlay}>
+          <Pressable
+            style={[StyleSheet.absoluteFillObject, { backgroundColor: theme.colors.modalBackdrop }]}
+            onPress={() => setTimelineOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel={t('order_hide_timeline')}
+          />
+          <View style={[styles.timelineSheet, { backgroundColor: theme.colors.surface, paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+            <View style={styles.timelineSheetHeader}>
+              <View style={styles.timelineSheetTitle}>
+                <Text variant="subtitle" weight="bold" color={theme.colors.gray900}>{t('order_delivery_progress')}</Text>
+                <Text variant="caption" color={theme.colors.gray600}>{detailQuery.data?.orderCode}</Text>
+              </View>
+              <Pressable onPress={() => setTimelineOpen(false)} accessibilityRole="button" accessibilityLabel={t('order_hide_timeline')} style={[styles.timelineClose, { backgroundColor: theme.colors.gray100 }]}>
+                <ChevronIcon up color={theme.colors.gray700} />
+              </Pressable>
+            </View>
+            <ScrollView contentContainerStyle={styles.timelineWrap} showsVerticalScrollIndicator={false}>
+              {progressTimeline.map((statusItem, index) => {
+                const isCompleted = index < timelineCurrentIndex;
+                const isCurrent = index === timelineCurrentIndex;
+                const showConnector = index < progressTimeline.length - 1;
+                return (
+                  <View key={statusItem} style={styles.timelineRow}>
+                    <View style={styles.railCol}>
+                      <View style={[styles.railDot, {
+                        borderColor: isCompleted || isCurrent ? theme.colors.sky600 : theme.colors.gray300,
+                        backgroundColor: isCompleted ? theme.colors.sky600 : theme.colors.surface,
+                      }]}>
+                        {isCompleted ? <CheckIcon color={theme.colors.white} /> : null}
+                        {isCurrent ? <View style={[styles.currentInner, { backgroundColor: theme.colors.sky600 }]} /> : null}
+                      </View>
+                      {showConnector ? <View style={[styles.railConnector, { backgroundColor: isCompleted ? theme.colors.sky600 : theme.colors.gray200 }]} /> : null}
+                    </View>
+                    <Text variant="label" weight={isCurrent ? 'bold' : 'medium'} color={isCurrent || isCompleted ? theme.colors.gray900 : theme.colors.gray500} style={styles.timelineText}>
+                      {t(STATUS_TITLE_KEY[statusItem])}
+                    </Text>
+                    {isCurrent ? <View style={[styles.timelineCurrentTag, { backgroundColor: theme.colors.sky100 }]}><Text variant="caption" weight="semiBold" color={theme.colors.sky600}>{t('order_current_step')}</Text></View> : null}
+                  </View>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -819,43 +762,35 @@ const styles = StyleSheet.create({
   },
   progressCardWrap: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 10,
-  },
-  alertCard: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  alertTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingTop: 12,
     gap: 8,
   },
+  inlineNotice: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 },
+  inlineNoticeText: { flex: 1 },
   progressCard: {
-    borderWidth: 1,
     borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 6,
-    elevation: 2,
+    paddingHorizontal: 18,
+    paddingTop: 16,
+    paddingBottom: 4,
+    gap: 14,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
+    elevation: 4,
   },
   loadingInline: {
     paddingVertical: 12,
   },
-  rowBetween: {
+  detailRetry: { gap: 8, paddingVertical: 4 },
+  statusHeading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  stepWrap: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
+  statusText: { flex: 1, minWidth: 0, gap: 5 },
+  nextStatus: { marginLeft: 18 },
+  stepPill: { overflow: 'hidden', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 6 },
   currentRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -872,44 +807,39 @@ const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    height: 6,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  segmentFill: {
-    height: '100%',
+    height: 4,
     borderRadius: 999,
   },
   timelineButton: {
-    borderRadius: 8,
-    paddingVertical: 10,
+    minHeight: 43,
+    borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     flexDirection: 'row',
-    gap: 6,
+    gap: 8,
   },
   chevronUp: {
     transform: [{ rotate: '180deg' }],
   },
   timelineWrap: {
-    gap: 8,
-    paddingTop: 4,
-  },
-  timelineScroll: {
-    maxHeight: 400,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   timelineRow: {
     flexDirection: 'row',
-    gap: 10,
-    alignItems: 'flex-start',
+    gap: 12,
+    alignItems: 'center',
+    minHeight: 52,
   },
   railCol: {
     width: 18,
+    height: 52,
     alignItems: 'center',
+    paddingTop: 10,
   },
   railDot: {
-    width: 18,
-    height: 18,
+    width: 16,
+    height: 16,
     borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
@@ -922,20 +852,23 @@ const styles = StyleSheet.create({
   },
   railConnector: {
     width: 2,
-    height: 30,
+    height: 36,
   },
   timelineText: {
     flex: 1,
-    gap: 2,
   },
+  timelineOverlay: { flex: 1, justifyContent: 'flex-end' },
+  timelineSheet: { maxHeight: '78%', borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 22, paddingTop: 22 },
+  timelineSheetHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 16 },
+  timelineSheetTitle: { flex: 1, gap: 3 },
+  timelineClose: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  timelineCurrentTag: { borderRadius: 12, paddingHorizontal: 9, paddingVertical: 4 },
   bottomControls: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    // paddingHorizontal: 16,
-    paddingTop: 10,
-    gap: 12,
+    gap: 8,
   },
   locationPermissionNotice: {
     marginHorizontal: 16,
@@ -947,43 +880,51 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   locationPermissionText: { flex: 1 },
-  floatingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16
-  },
   navigateChip: {
-    borderRadius: 50,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    minHeight: 42,
+    borderRadius: 12,
+    paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
+  disabledAction: { opacity: 0.45 },
   roundAction: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ctaWrap: {
     paddingHorizontal: 16,
-    paddingVertical: 30,
+    paddingTop: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    gap: 14,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  destinationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  destinationCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
   },
   conversationActions: {
     flexDirection: 'row',
     gap: 8,
-    marginBottom: 16,
   },
   primaryButton: {
     height: 54,
-    borderRadius: 40,
+    borderRadius: 14,
   },
+  statusError: { textAlign: 'center' },
 });

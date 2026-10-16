@@ -71,7 +71,7 @@ module.exports = {
     plugins: [
       [
         'expo-notifications',
-        { sounds: ['./assets/sound/beep3.mp3'] },
+        { sounds: ['./assets/sound/beep3.mp3', './assets/sound/new_order_chime.wav', './assets/sound/new_order_beep.wav', './assets/sound/new_order_beep_5s.wav'] },
       ],
       'expo-secure-store',
       [

@@ -16,12 +16,16 @@ import './src/localization/i18n';
 import './src/location/riderBackgroundLocationTask';
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    const type = notification.request.content.data?.type;
+    const shownInApp = type === 'zone_order_available' || type === 'rider_assignment';
+    return {
+      shouldPlaySound: !shownInApp,
+      shouldSetBadge: false,
+      shouldShowBanner: !shownInApp,
+      shouldShowList: !shownInApp,
+    };
+  },
 });
 
 function getNavigationButtonStyle(backgroundColor: string) {

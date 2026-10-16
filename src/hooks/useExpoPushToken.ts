@@ -7,6 +7,8 @@ import * as Notifications from 'expo-notifications';
 const DEFAULT_ANDROID_CHANNEL_ID = 'default';
 // Android does not allow changing an existing channel's sound.
 const ORDER_OFFERS_ANDROID_CHANNEL_ID = 'order-offers-beep-v2';
+export const RIDER_ORDER_BEEP_5S_CHANNEL_ID = 'new-orders-beep-5s-v4';
+let lastOrderChannelDiagnostic: string | null = null;
 
 const getProjectId = () =>
   Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId ?? null;
@@ -20,7 +22,7 @@ const toErrorMessage = (error: unknown) => {
 };
 
 export async function ensureRiderNotificationChannels() {
-  if (Platform.OS !== 'android') return;
+  if (Platform.OS !== 'android') return true;
 
   await Notifications.setNotificationChannelAsync(DEFAULT_ANDROID_CHANNEL_ID, {
     name: 'default',
@@ -35,6 +37,48 @@ export async function ensureRiderNotificationChannels() {
     vibrationPattern: [0, 500, 500, 500],
     lightColor: '#7BAF00',
   });
+  await Notifications.setNotificationChannelAsync('new-orders-chime-v1', {
+    name: 'New delivery orders',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'new_order_chime.wav',
+    vibrationPattern: [0, 250],
+  });
+  await Notifications.setNotificationChannelAsync('new-orders-beep-v2', {
+    name: 'New delivery orders (beep)',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'new_order_beep.wav',
+    vibrationPattern: [0, 250],
+  });
+  await Notifications.setNotificationChannelAsync('new-orders-beep-5s-v3', {
+    name: 'New delivery orders (5 second beep)',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'new_order_beep_5s.wav',
+    vibrationPattern: [0, 250],
+  });
+  // Android keeps a channel's first sound choice. Use a fresh ID for this rollout.
+  await Notifications.setNotificationChannelAsync(RIDER_ORDER_BEEP_5S_CHANNEL_ID, {
+    name: 'New delivery orders (5 second beep)',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'new_order_beep_5s.wav',
+    vibrationPattern: [0, 250],
+  });
+  await Notifications.setNotificationChannelAsync('new-orders-silent-v1', {
+    name: 'Additional delivery orders',
+    importance: Notifications.AndroidImportance.LOW,
+    vibrationPattern: [0],
+  });
+  const channel = await Notifications.getNotificationChannelAsync(RIDER_ORDER_BEEP_5S_CHANNEL_ID);
+  const diagnostic = JSON.stringify({
+    id: RIDER_ORDER_BEEP_5S_CHANNEL_ID,
+    exists: Boolean(channel),
+    importance: channel?.importance ?? null,
+    sound: channel?.sound ?? null,
+  });
+  if (diagnostic !== lastOrderChannelDiagnostic) {
+    console.info('[rider][push] order channel', diagnostic);
+    lastOrderChannelDiagnostic = diagnostic;
+  }
+  return Boolean(channel && channel.importance >= Notifications.AndroidImportance.DEFAULT && channel.sound);
 }
 
 export function useExpoPushToken() {

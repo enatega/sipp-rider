@@ -31,7 +31,7 @@ const getTotalEarnings = (item: EarningsBottomSheetItem) =>
   'activity_date' in item ? item.total_earnings : item.amount;
 
 const getHoursWorked = (item: EarningsBottomSheetItem) =>
-  'activity_date' in item ? item.hours_worked ?? '' : item.hoursWorked;
+  'activity_date' in item ? item.hours_worked : item.hoursWorked;
 
 const getTips = (item: EarningsBottomSheetItem) => item.tips;
 
@@ -90,7 +90,7 @@ export default function EarningsBottomSheet({
             </View>
 
             <View style={styles.details}>
-              <InfoRow label={t('earnings_hours_worked')} value={getHoursWorked(item)} />
+              <InfoRow label={t('earnings_hours_worked')} value={getHoursWorked(item) || t('earnings_not_available')} />
               <InfoRow label={t('earnings_tips')} value={formatCurrency(getTips(item))} />
               <Pressable
                 onPress={onPressDeliveries}

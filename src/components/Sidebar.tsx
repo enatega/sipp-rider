@@ -6,7 +6,7 @@ import Text from './Text';
 import ToggleSwitch from './ToggleSwitch';
 import { useAppTheme } from '../theme/ThemeProvider';
 import { useAuth } from '../auth/AuthProvider';
-import { useLogoutMutation } from '../hooks/useAuthMutations';
+import { useConfirmLogout } from '../hooks/useConfirmLogout';
 import { useTranslations } from '../localization/LocalizationProvider';
 import { useRiderProfileQuery } from '../hooks/useRiderProfileQuery';
 
@@ -14,6 +14,7 @@ type Props = {
   visible: boolean;
   onClose: () => void;
   availability: boolean;
+  isAvailabilityPending?: boolean;
   onAvailabilityChange: (v: boolean) => void;
   onNavigate: (screen: 'Language' | 'VehicleType' | 'BankManagement' | 'WorkSchedule') => void;
   onSwitchTab?: () => void;
@@ -44,12 +45,12 @@ const HELP_URL = 'https://ninjascode.com/';
 function IconBox({ children }: { children: React.ReactNode }) { return <View style={styles.iconBox}>{children}</View>; }
 function ChevronRight({ color }: { color: string }) { return <View style={[styles.chevron, { borderColor: color }]} />; }
 
-export default function Sidebar({ visible, onClose, availability, onAvailabilityChange, onNavigate, onSwitchTab }: Props) {
+export default function Sidebar({ visible, onClose, availability, isAvailabilityPending, onAvailabilityChange, onNavigate, onSwitchTab }: Props) {
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const { session } = useAuth();
   const profileQuery = useRiderProfileQuery();
-  const logoutMutation = useLogoutMutation();
+  const { confirmLogout } = useConfirmLogout();
   const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
   const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -188,7 +189,7 @@ export default function Sidebar({ visible, onClose, availability, onAvailability
       type: 'nav',
       label: t('menu_logout'),
       icon: <Image source={SIDEBAR_ICONS.logout} style={styles.iconImage} resizeMode="contain" />,
-      onPress: () => logoutMutation.mutate(),
+      onPress: confirmLogout,
     },
   ];
 
@@ -233,7 +234,7 @@ export default function Sidebar({ visible, onClose, availability, onAvailability
               <Text variant="body" weight="semiBold" color={theme.colors.text} style={styles.rowLabel}>{item.label}</Text>
               {item.type === 'toggle' ? (
                 <View style={styles.toggleWrapper}>
-                  <ToggleSwitch value={item.value} onValueChange={item.onToggle} />
+                  <ToggleSwitch value={item.value} onValueChange={item.onToggle} disabled={item.key === 'availability' && isAvailabilityPending} />
                   {item.subLabel ? <Text variant="caption" color={theme.colors.gray600}>{item.subLabel}</Text> : null}
                 </View>
               ) : (

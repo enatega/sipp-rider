@@ -6,6 +6,8 @@ export type RiderEarningsQueryParams = {
 export type RiderEarningsActivitiesQueryParams = {
   page: number;
   limit: number;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type RiderEarningsDateRange = {
@@ -14,7 +16,7 @@ export type RiderEarningsDateRange = {
 };
 
 export type RiderEarningsSummary = {
-  hours_worked: string;
+  hours_worked: string | null;
   deliveries: number;
   total_earnings: number;
   deliveries_earnings: number;
@@ -37,7 +39,7 @@ export type RiderEarningsActivity = {
   total_earnings: number;
   deliveries_earnings: number;
   tips: number;
-  hours_worked?: string;
+  hours_worked?: string | null;
 };
 
 export type RiderEarningsActivityDelivery = {
@@ -53,7 +55,7 @@ export type RiderEarningsActivityDeliveriesResponse = {
   activity_date: string;
   summary: {
     total_earnings: number;
-    hours_worked: string;
+    hours_worked: string | null;
     tips: number;
     deliveries: {
       count: number;
