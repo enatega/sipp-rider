@@ -8,6 +8,7 @@ import Map from '../components/Map';
 import Text from '../components/Text';
 import Button from '../components/Button';
 import OrderConversationButton from '../components/OrderConversationButton';
+import RiderLocationDisclosureModal from '../components/RiderLocationDisclosureModal';
 import PhoneIcon from '../assets/svgs/phone.svg';
 import { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
@@ -24,7 +25,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { RiderOrderUpdatableStatus } from '../api/riderHomeTypes';
 import type MapView from 'react-native-maps';
 import { useRiderLiveLocationTracking } from '../hooks/useRiderLiveLocationTracking';
-import { getRiderDeliveryLocationPermissionStatus, requestRiderDeliveryLocationPermissions } from '../location/riderBackgroundLocationTask';
+import { getRiderDeliveryLocationPermissionStatus, requestRiderDeliveryLocationPermissions, stopRiderBackgroundLocation } from '../location/riderBackgroundLocationTask';
 import { useRiderOrderChatUnreadQuery } from '../hooks/useSupportChat';
 
 type Props = NativeStackScreenProps<MainStackParamList, 'ProcessingOrderDetail'>;
@@ -114,6 +115,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const [locationPermissionIssue, setLocationPermissionIssue] = useState<'foreground' | 'background' | null>(null);
   const [canAskLocationAgain, setCanAskLocationAgain] = useState(true);
   const [locationPermissionRevision, setLocationPermissionRevision] = useState(0);
+  const [locationDisclosureIntent, setLocationDisclosureIntent] = useState<'pickup' | 'retry' | null>(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(56);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
@@ -312,9 +314,60 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const isPrimaryActionDisabled =
     updateStatusMutation.isPending
     || isRequestingLocationPermission
+    || locationDisclosureIntent !== null
     || !canUpdateStatus
     || !nextUpdateStatus
     || waitingForStoreReadyToPickup;
+
+  const submitStatusUpdate = (status: RiderOrderUpdatableStatus) => {
+    updateStatusMutation.mutate(
+      { status },
+      {
+        onSuccess: async () => {
+          if (status === 'delivered') {
+            await stopRiderBackgroundLocation().catch((error) => {
+              console.warn('[rider][location] unable to stop completed delivery tracking', error);
+            });
+            navigation.navigate('Home', {
+              screen: 'HomeTab',
+              params: { completedOrder: { orderCode: detailQuery.data?.orderCode ?? '' } },
+            });
+          }
+        },
+        onError: (error) => {
+          if (error.status === 400 && error.message.toLowerCase().includes('invalid status transition')) {
+            void detailQuery.refetch();
+          }
+        },
+      },
+    );
+  };
+
+  const requestLocationPermission = async () => {
+    setIsRequestingLocationPermission(true);
+    try {
+      const permission = await requestRiderDeliveryLocationPermissions();
+      setLocationPermissionIssue(permission.granted ? null : permission.level);
+      setCanAskLocationAgain(permission.granted || permission.canAskAgain);
+      if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
+    } catch (error) {
+      console.warn('[rider][location] delivery permission request unavailable', error);
+      setLocationPermissionIssue('foreground');
+      setCanAskLocationAgain(true);
+    } finally {
+      setIsRequestingLocationPermission(false);
+    }
+  };
+
+  const handleLocationDisclosureContinue = async () => {
+    const intent = locationDisclosureIntent;
+    setLocationDisclosureIntent(null);
+    if (!intent) return;
+    await requestLocationPermission();
+    if (intent === 'pickup' && nextUpdateStatus === 'picked_up') {
+      submitStatusUpdate('picked_up');
+    }
+  };
 
   const handlePrimaryAction = async () => {
     if (nextUpdateStatus === 'heading_to_store') {
@@ -335,38 +388,21 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       if (nextUpdateStatus === 'picked_up') {
         setIsRequestingLocationPermission(true);
         try {
-          const permission = await requestRiderDeliveryLocationPermissions();
-          setLocationPermissionIssue(permission.granted ? null : permission.level);
-          setCanAskLocationAgain(permission.granted || permission.canAskAgain);
-          if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
+          const permission = await getRiderDeliveryLocationPermissionStatus();
+          if (!permission.granted) {
+            setLocationDisclosureIntent('pickup');
+            return;
+          }
         } catch (error) {
-          console.warn('[rider][location] delivery permission request unavailable', error);
-          setLocationPermissionIssue('foreground');
-          setCanAskLocationAgain(true);
+          console.warn('[rider][location] unable to check delivery permission', error);
+          setLocationDisclosureIntent('pickup');
+          return;
         } finally {
           setIsRequestingLocationPermission(false);
         }
       }
 
-      updateStatusMutation.mutate(
-        { status: nextUpdateStatus },
-        {
-          onSuccess: () => {
-            if (nextUpdateStatus === 'delivered') {
-              navigation.navigate('Home', {
-                screen: 'HomeTab',
-                params: { completedOrder: { orderCode: detailQuery.data?.orderCode ?? '' } },
-              });
-            }
-          },
-          onError: (error) => {
-            // If backend says transition is invalid (already moved), refresh state and continue.
-            if (error.status === 400 && error.message.toLowerCase().includes('invalid status transition')) {
-              void detailQuery.refetch();
-            }
-          },
-        },
-      );
+      submitStatusUpdate(nextUpdateStatus);
       return;
     }
 
@@ -379,18 +415,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
       }
       return;
     }
-    setIsRequestingLocationPermission(true);
-    try {
-      const permission = await requestRiderDeliveryLocationPermissions();
-      setLocationPermissionIssue(permission.granted ? null : permission.level);
-      setCanAskLocationAgain(permission.granted || permission.canAskAgain);
-      if (permission.granted) setLocationPermissionRevision((revision) => revision + 1);
-    } catch (error) {
-      console.warn('[rider][location] permission retry unavailable', error);
-      setLocationPermissionIssue('foreground');
-    } finally {
-      setIsRequestingLocationPermission(false);
-    }
+    setLocationDisclosureIntent('retry');
   };
 
   return (
@@ -582,6 +607,12 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
           ) : null}
         </View>
       </View> : null}
+
+      <RiderLocationDisclosureModal
+        visible={locationDisclosureIntent !== null}
+        onContinue={() => void handleLocationDisclosureContinue()}
+        onNotNow={() => setLocationDisclosureIntent(null)}
+      />
 
       <Modal
         visible={timelineOpen}

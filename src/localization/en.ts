@@ -248,6 +248,11 @@ const en = {
   order_location_background_needed: 'Allow location all the time to keep sharing your trip while another app is open.',
   order_location_retry: 'Try again',
   order_location_settings: 'Open settings',
+  order_location_disclosure_title: 'Share your location during this delivery',
+  order_location_disclosure_body: 'Sipp Rider collects location data to show the customer your live delivery progress, even when the app is closed or not in use. Sharing starts when you pick up the order and stops when the delivery ends.',
+  order_location_disclosure_control: 'Continue to choose your device location permissions. You can change them later in Settings.',
+  order_location_disclosure_continue: 'Continue',
+  order_location_disclosure_not_now: 'Not now',
 
   menu_availability: 'Availability',
   menu_available: 'Available',

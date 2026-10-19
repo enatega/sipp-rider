@@ -10,7 +10,7 @@ import {
 import { riderHomeKeys } from '../api/queryKeys';
 import { riderOrderDetailService } from '../api/riderOrderDetailService';
 import type { RiderOrderDetail } from '../api/riderOrderDetailTypes';
-import { applyAssignedSummaryCounts, applyDeliveredSummaryCounts, getCachedRiderOrder, moveOrderBetweenRiderTabs } from './riderHomeCache';
+import { applyAssignedSummaryCounts, applyDeliveredSummaryCounts, getCachedRiderOrder, moveOrderBetweenRiderTabs, updateCachedRiderOrderStatus } from './riderHomeCache';
 
 export function useAssignOrderMutation() {
   return useClaimOrderMutation(riderHomeService.assignOrderToCurrentRider);
@@ -54,6 +54,7 @@ export function useUpdateRiderOrderStatusMutation(orderId: string) {
     mutationFn: (payload) => riderOrderDetailService.updateOrderStatus(orderId, payload),
     onMutate: () => getCachedRiderOrder(queryClient, 'processing', orderId),
     onSuccess: (response, payload, cachedOrder) => {
+      updateCachedRiderOrderStatus(queryClient, orderId, response.status, response.riderStatus ?? payload.status);
       queryClient.setQueryData<RiderOrderDetail>(riderHomeKeys.orderDetail(orderId), (current) => current ? {
         ...current,
         status: response.status ?? current.status,

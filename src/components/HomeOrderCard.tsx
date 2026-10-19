@@ -13,6 +13,7 @@ import type { MainStackParamList } from '../navigation/types';
 import { useAppTheme } from '../theme/ThemeProvider';
 import type { ThemeColors } from '../theme/colors';
 import type { RiderHomeOrder, RiderOrderTab } from '../api/riderHomeTypes';
+import { resolveProgressStatusFromOrder, RiderDeliveryProgressStatus } from '../screens/orderDetail/progress';
 import Button from './Button';
 import OrderConversationButton from './OrderConversationButton';
 import Text from './Text';
@@ -53,10 +54,12 @@ export default function HomeOrderCard({ order, tab, onAssigned, highlighted = fa
   const [assignError, setAssignError] = React.useState('');
 
   const code = (order.orderCode ?? order.orderId?.split('-')[0]?.toUpperCase() ?? '—').replace(/^#/, '');
+  const progressStatus = resolveProgressStatusFromOrder(order.status, order.riderStatus);
   const status = tab === 'new'
     ? t('status_new_order')
-    : ((tab === 'processing' ? order.riderStatusLabel ?? order.riderStatus : null)
-      ?? order.statusLabel ?? order.status ?? t('status_unknown'));
+    : tab === 'processing' && (progressStatus !== RiderDeliveryProgressStatus.ASSIGNED || order.status === 'rider_assigned' || order.riderStatus)
+      ? t(`order_status_${progressStatus}`)
+      : order.statusLabel ?? order.status ?? t('status_unknown');
   const tone = statusTone(theme.colors, status);
   const createdAt = order.createdAt ? new Date(order.createdAt) : null;
   const placedAt = createdAt && !Number.isNaN(createdAt.getTime())

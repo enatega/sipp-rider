@@ -248,6 +248,11 @@ const fr = {
   order_location_background_needed: 'Autorisez la localisation en permanence pour continuer le suivi quand une autre application est ouverte.',
   order_location_retry: 'Réessayer',
   order_location_settings: 'Ouvrir les réglages',
+  order_location_disclosure_title: 'Partager votre position pendant cette livraison',
+  order_location_disclosure_body: 'Sipp Rider recueille vos données de localisation pour montrer au client la progression de sa livraison en direct, même lorsque l’application est fermée ou que vous ne l’utilisez pas. Le partage commence à la prise en charge de la commande et s’arrête à la fin de la livraison.',
+  order_location_disclosure_control: 'Continuez pour choisir les autorisations de localisation de votre appareil. Vous pourrez les modifier plus tard dans les réglages.',
+  order_location_disclosure_continue: 'Continuer',
+  order_location_disclosure_not_now: 'Pas maintenant',
 
   menu_availability: 'Disponibilite',
   menu_available: 'Disponible',

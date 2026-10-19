@@ -56,6 +56,36 @@ export function getCachedRiderOrder(queryClient: QueryClient, tab: RiderOrderTab
     .find((item) => item.orderId === orderId);
 }
 
+export function updateCachedRiderOrderStatus(
+  queryClient: QueryClient,
+  orderId: string,
+  status: string | undefined,
+  riderStatus: string,
+) {
+  const queries = queryClient.getQueriesData<InfiniteData<RiderOrdersPage>>({
+    queryKey: riderHomeKeys.ordersAll(),
+  });
+
+  queries.forEach(([key, data]) => {
+    if (key[2] !== 'processing' || !data) return;
+    if (!data.pages.some((page) => page.items.some((item) => item.orderId === orderId))) return;
+
+    queryClient.setQueryData<InfiniteData<RiderOrdersPage>>(key, {
+      ...data,
+      pages: data.pages.map((page) => ({
+        ...page,
+        items: page.items.map((item) => item.orderId === orderId ? {
+          ...item,
+          status: status ?? item.status,
+          statusLabel: null,
+          riderStatus,
+          riderStatusLabel: null,
+        } : item),
+      })),
+    });
+  });
+}
+
 export function moveOrderBetweenRiderTabs(
   queryClient: QueryClient,
   sourceTab: RiderOrderTab,

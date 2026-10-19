@@ -5,7 +5,7 @@ module.exports = {
     name: 'Sipp Rider',
     slug: 'sipp-rider',
     owner: "sipp-delivery",
-    version: '1.0.3',
+    version: '1.0.4',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'automatic',
@@ -32,6 +32,7 @@ module.exports = {
       },
     },
     android: {
+      versionCode: 4,
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',
