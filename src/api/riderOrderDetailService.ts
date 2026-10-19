@@ -21,6 +21,8 @@ const EMPTY_ORDER_DETAIL: RiderOrderDetail = {
   storeImage: null,
   pickupAddress: null,
   deliveryAddress: null,
+  deliveryAddressDetails: null,
+  deliveryAddressExtras: null,
   orderAmount: null,
   distanceKm: null,
   paymentMethod: null,

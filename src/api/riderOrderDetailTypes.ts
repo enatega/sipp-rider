@@ -1,3 +1,4 @@
+import type { AddressDetails } from '../api/addressDetailsTypes';
 export type RiderOrderItem = {
   productId: string | null;
   name: string | null;
@@ -22,6 +23,9 @@ export type RiderOrderDetail = {
   storeImage: string | null;
   pickupAddress: string | null;
   deliveryAddress: string | null;
+  deliveryAddressDetails?: AddressDetails | null;
+  deliveryAddressIsHistoricalFallback?: boolean;
+  deliveryAddressExtras?: string | null;
   orderAmount: number | null;
   distanceKm: number | null;
   paymentMethod: string | null;

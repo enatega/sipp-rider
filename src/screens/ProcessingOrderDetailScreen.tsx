@@ -1,3 +1,4 @@
+import AddressDetailsView from '../components/AddressDetailsView';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Linking, Modal, Pressable, ScrollView, StyleSheet, View, type AppStateStatus } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -551,7 +552,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                 {isLiveTrackingStatus ? t('chat_customer_name') : t('chat_store_name')}
               </Text>
               <Text variant="label" weight="bold" color={theme.colors.gray900} numberOfLines={1}>{destinationName}</Text>
-              {destinationAddress ? <Text variant="caption" color={theme.colors.gray600} numberOfLines={1}>{destinationAddress}</Text> : null}
+              {destinationAddress ? <Text variant="caption" color={theme.colors.gray600}>{destinationAddress}</Text> : null}
             </View>
             <Pressable
               style={[styles.navigateChip, { backgroundColor: theme.colors.zinc800 }, !navigationDestination && styles.disabledAction]}
@@ -564,6 +565,10 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
               <Text variant="caption" weight="semiBold" color={theme.colors.white}>{t('order_navigate')}</Text>
             </Pressable>
           </View>
+          <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled>
+            <AddressDetailsView isHistoricalFallback={detailQuery.data.deliveryAddressIsHistoricalFallback} details={detailQuery.data.deliveryAddressDetails} legacyText={detailQuery.data.deliveryAddressExtras} />
+            {detailQuery.data.courierNote ? <View><Text weight="semiBold">{t('address_details_courierMessage')}</Text><Text>{detailQuery.data.courierNote}</Text></View> : null}
+          </ScrollView>
           <View style={styles.conversationActions}>
             <OrderConversationButton
               kind="store_rider"

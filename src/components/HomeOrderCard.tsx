@@ -1,3 +1,4 @@
+import AddressDetailsView from './AddressDetailsView';
 import React from 'react';
 import { Alert, Image, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -109,6 +110,7 @@ export default function HomeOrderCard({ order, tab, onAssigned, highlighted = fa
       <View style={styles.contacts}>
         <ContactCard kind="store_rider" name={order.storeName || t('chat_store_name')} address={order.pickupAddress} image={order.storeImage} unreadCount={unread?.store_rider ?? 0} showChat={showChats} onChat={() => openChat('store_rider')} colors={theme.colors} />
         <ContactCard kind="customer_rider" name={order.customerName || t('chat_customer_name')} address={order.deliveryAddress} image={order.customerImage} unreadCount={unread?.customer_rider ?? 0} showChat={showChats} onChat={() => openChat('customer_rider')} colors={theme.colors} />
+        <AddressDetailsView isHistoricalFallback={order.deliveryAddressIsHistoricalFallback} details={order.deliveryAddressDetails} legacyText={order.deliveryAddressExtras} />
       </View>
 
       <View style={[styles.summary, { borderTopColor: theme.colors.gray200 }]}>

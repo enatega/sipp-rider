@@ -74,6 +74,19 @@ const getRequestPath = (config: AxiosRequestConfig): string => {
   return url.startsWith('http') ? url : base + (url.startsWith('/') ? url : '/' + url);
 };
 
+const PRIVATE_ADDRESS_KEYS = new Set(['placename', 'howtofindyou', 'deliveryinstructions', 'addressdetails', 'deliveryaddressdetails', 'deliveryaddressextras', 'additional_fields']);
+function redactAddressDetails(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactAddressDetails);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, item]) => [key, PRIVATE_ADDRESS_KEYS.has(key.toLowerCase()) ? '[redacted]' : redactAddressDetails(item)]));
+}
+function safeDebugBody(value: unknown): unknown {
+  if (typeof value === 'string') {
+    try { return redactAddressDetails(JSON.parse(value)); } catch { return '[unparsed body]'; }
+  }
+  return redactAddressDetails(value);
+}
+
 if (ENABLE_API_DEBUG_LOGS) {
   httpClient.interceptors.request.use((config) => {
     const startedAt = Date.now();
@@ -82,7 +95,7 @@ if (ENABLE_API_DEBUG_LOGS) {
     };
     const method = String(config.method ?? 'GET').toUpperCase();
     const path = getRequestPath(config);
-    console.log('[API REQUEST]', method, path, { params: config.params, data: config.data });
+    console.log('[API REQUEST]', method, path, { params: safeDebugBody(config.params), data: safeDebugBody(config.data) });
     return config;
   });
 
@@ -98,7 +111,7 @@ if (ENABLE_API_DEBUG_LOGS) {
       console.log('[API RESPONSE]', method, path, {
         status: response.status,
         durationMs,
-        data: response.data,
+        data: safeDebugBody(response.data),
       });
       return response;
     },
@@ -115,7 +128,7 @@ if (ENABLE_API_DEBUG_LOGS) {
           status: error.response?.status ?? 0,
           durationMs,
           message: error.message,
-          data: error.response?.data,
+          data: safeDebugBody(error.response?.data),
         });
       } else {
         console.log('[API ERROR]', 'UNKNOWN', { message: String(error) });
