@@ -1,0 +1,8 @@
+# Firebase and Google Maps browser keys are public by design (they are restricted by package or referrer in Google Cloud).
+title = "SIPP"
+[extend]
+useDefault = true
+[allowlist]
+description = "Public client keys and placeholders"
+regexes = ['''AIza[0-9A-Za-z_-]{35}''']
+paths = ['''sample\.env''', '''\.env\.example''', '''package-lock\.json''']

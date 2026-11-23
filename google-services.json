@@ -1,0 +1,118 @@
+{
+  "project_info": {
+    "project_number": "353992787346",
+    "project_id": "sipp-enatega-production",
+    "storage_bucket": "sipp-enatega-production.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353992787346:android:0eb2d2c56d9b5ba293ed4b",
+        "android_client_info": {
+          "package_name": "com.sipp.delivery.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVbntbS_ijug1ekfiUZfyzwN2myCVQBog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "353992787346-iu1vu2eusd7ur2s0s6mk58hh2b8f8ms5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sipp.delivery.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353992787346:android:d330b838726536df93ed4b",
+        "android_client_info": {
+          "package_name": "com.sipp.rider.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVbntbS_ijug1ekfiUZfyzwN2myCVQBog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "353992787346-iu1vu2eusd7ur2s0s6mk58hh2b8f8ms5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sipp.delivery.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:353992787346:android:707e9983880b116893ed4b",
+        "android_client_info": {
+          "package_name": "com.sipp.store.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVbntbS_ijug1ekfiUZfyzwN2myCVQBog"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "353992787346-360fl5ejhp67h0teuf37339987g99009.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "353992787346-iu1vu2eusd7ur2s0s6mk58hh2b8f8ms5.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.sipp.delivery.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

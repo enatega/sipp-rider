@@ -1,0 +1,33 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.orderalertring'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.orderalertring"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+// OrderAlertMessagingService extends expo-notifications' Firebase service. SDK 54 normally
+// links expo-notifications as a prebuilt Maven artifact (no Gradle project), and as a project
+// when built from source, so support both.
+def expoNotificationsVersion = new groovy.json.JsonSlurper()
+  .parse(file('../../../node_modules/expo-notifications/package.json')).version
+
+dependencies {
+  // expo-notifications keeps Firebase Messaging private to itself, but our FCM service subclass
+  // compiles against it. The app already packages the same version at runtime.
+  compileOnly 'com.google.firebase:firebase-messaging:24.0.1'
+  def expoNotificationsProject = rootProject.findProject(':expo-notifications')
+  if (expoNotificationsProject != null) {
+    implementation expoNotificationsProject
+  } else {
+    implementation "host.exp.exponent:expo.modules.notifications:${expoNotificationsVersion}"
+  }
+}
