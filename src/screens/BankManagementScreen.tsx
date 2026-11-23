@@ -116,7 +116,7 @@ export default function BankManagementScreen() {
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         {bankDetailsQuery.isLoading ? (
-          <View style={styles.centerState}><ActivityIndicator color={theme.colors.primary} /></View>
+          <View style={styles.centerState}><ActivityIndicator color={theme.colors.brandInk} /></View>
         ) : bankDetailsQuery.isError ? (
           <View style={styles.centerState}>
             <Text color={theme.colors.gray600}>{t('bank_load_error')}</Text>

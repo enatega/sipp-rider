@@ -65,12 +65,12 @@ export default function AddressDetailsView({ details, legacyText, compact = fals
         <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray200 }]}>
           {rows.map((row, index) => (
             <View key={row.id} style={[styles.row, index > 0 && { borderTopColor: theme.colors.gray200, borderTopWidth: StyleSheet.hairlineWidth }]}>
-              <View style={[styles.iconTile, { backgroundColor: theme.colors.sky100 }]}>
-                <Feather accessible={false} name={row.icon} size={14} color={theme.colors.sky600} />
+              <View style={[styles.iconTile, { backgroundColor: theme.colors.primarySoft }]}>
+                <Feather accessible={false} name={row.icon} size={14} color={theme.colors.brandInk} />
               </View>
               <View style={styles.rowText}>
                 {row.label ? <Text variant="caption" weight="semiBold" color={theme.colors.gray600} style={styles.label}>{row.label}</Text> : null}
-                <ExpandableText text={row.value} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} textColor={theme.colors.gray900} linkColor={theme.colors.sky600} textStyle={[styles.value, theme.typography.role.addressDetail]} />
+                <ExpandableText text={row.value} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} textColor={theme.colors.gray900} linkColor={theme.colors.brandInk} textStyle={[styles.value, theme.typography.role.addressDetail]} />
               </View>
             </View>
           ))}

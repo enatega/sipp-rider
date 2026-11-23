@@ -14,8 +14,8 @@ export default function WalletHistoryLink({ title, hint, onPress }: Props) {
       onPress={onPress}
       style={({ pressed }) => [styles.card, { borderColor: theme.colors.gray200, backgroundColor: pressed ? theme.colors.gray100 : theme.colors.surface }]}
     >
-      <View style={[styles.iconTile, { backgroundColor: theme.colors.sky100 }]}>
-        <Feather name="file-text" size={20} color={theme.colors.sky600} />
+      <View style={[styles.iconTile, { backgroundColor: theme.colors.primarySoft }]}>
+        <Feather name="file-text" size={20} color={theme.colors.brandInk} />
       </View>
       <View style={styles.copy}>
         <Text weight="semiBold" color={theme.colors.gray900}>{title}</Text>

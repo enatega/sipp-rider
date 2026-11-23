@@ -53,8 +53,8 @@ export default function SupportTicketForm({ initialEmail, isSubmitting, onSubmit
             {reasons.map((item, index) => (
               <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: reason === item }}
                 onPress={() => setReason(item)} style={[styles.reasonRow, { borderTopColor: theme.colors.gray200, borderTopWidth: index ? StyleSheet.hairlineWidth : 0 }]}>
-                <View style={[styles.radio, { borderColor: reason === item ? theme.colors.primary : theme.colors.gray400 }]}>
-                  {reason === item && <View style={[styles.radioFill, { backgroundColor: theme.colors.primary }]} />}
+                <View style={[styles.radio, { borderColor: reason === item ? theme.colors.brandInk : theme.colors.gray400 }]}>
+                  {reason === item && <View style={[styles.radioFill, { backgroundColor: theme.colors.brandInk }]} />}
                 </View>
                 <Text weight={reason === item ? 'semiBold' : 'regular'} style={[styles.reasonText, { color: theme.colors.gray900 }]}>{t(`support_reason_${item}`)}</Text>
                 <Ionicons name="chevron-forward" size={18} color={theme.colors.gray400} />

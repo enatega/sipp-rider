@@ -43,7 +43,7 @@ export default function RiderLocationDisclosureModal({ visible, onContinue, onNo
               onPress={() => void Linking.openURL(PRIVACY_POLICY_URL).catch(() => undefined)}
               style={styles.link}
             >
-              <Text variant="label" weight="semiBold" color={theme.colors.primary} style={styles.linkText}>
+              <Text variant="label" weight="semiBold" color={theme.colors.brandInk} style={styles.linkText}>
                 {t('order_location_disclosure_privacy')}
               </Text>
             </Pressable>

@@ -98,7 +98,7 @@ export default function VerifyResetCodeScreen({ navigation, route }: Props) {
         <Text color={theme.colors.gray600}>{t('verify_no_code')}</Text>
         {countdown.canResend ? (
           <Pressable onPress={resend} disabled={resendMutation.isPending} accessibilityRole="button" hitSlop={8}>
-            <Text weight="semiBold" color={theme.colors.loginAccent}>
+            <Text weight="semiBold" color={theme.colors.brandInk}>
               {resendMutation.isPending ? t('forgot_sending_code') : t('verify_resend')}
             </Text>
           </Pressable>

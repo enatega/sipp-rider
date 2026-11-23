@@ -75,8 +75,8 @@ export default function EarningsDetailScreen({ navigation }: Props) {
             {dateRangeTitle}
           </Text>
         )}
-        <Pressable onPress={() => setFilterOpen(true)} style={styles.iconButton} hitSlop={8} accessibilityRole="button" accessibilityLabel="Select date range">
-          <FunnelIcon color={dateRange ? theme.colors.blue500 : theme.colors.gray900} />
+        <Pressable onPress={() => setFilterOpen(true)} style={[styles.iconButton, dateRange ? { backgroundColor: theme.colors.primary, borderRadius: 8 } : null]} hitSlop={8} accessibilityRole="button" accessibilityLabel="Select date range">
+          <FunnelIcon color={dateRange ? theme.colors.brandInk : theme.colors.gray900} />
         </Pressable>
       </View>
 

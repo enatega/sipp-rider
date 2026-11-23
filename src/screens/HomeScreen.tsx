@@ -187,14 +187,14 @@ export default function HomeScreen() {
 
       {homeFilter === 'new' && focusedOffer && !isAvailabilityOff ? (
         <View style={styles.focusRow}>
-          <View style={[styles.focusPill, { backgroundColor: theme.isDark ? theme.colors.gray200 : theme.colors.sky100 }]}>
-            <Feather name="filter" size={15} color={theme.colors.sky600} />
-            <Text weight="semiBold" style={[styles.focusCode, { color: theme.colors.sky600 }]}>
+          <View style={[styles.focusPill, { backgroundColor: theme.isDark ? theme.colors.gray200 : theme.colors.primarySoft }]}>
+            <Feather name="filter" size={15} color={theme.colors.brandInk} />
+            <Text weight="semiBold" style={[styles.focusCode, { color: theme.colors.brandInk }]}>
               #{(focusedOffer.orderCode || focusedOffer.orderId.split('-')[0]).replace(/^#/, '').toUpperCase()}
             </Text>
-            <View style={[styles.focusDivider, { backgroundColor: theme.colors.sky600 }]} />
+            <View style={[styles.focusDivider, { backgroundColor: theme.colors.brandInk }]} />
             <Pressable accessibilityRole="button" accessibilityLabel={t('orders_focus_clear')} onPress={() => setFocusedOffer(null)} hitSlop={8} style={styles.focusClear}>
-              <Feather name="x" size={18} color={theme.colors.sky600} />
+              <Feather name="x" size={18} color={theme.colors.brandInk} />
             </Pressable>
           </View>
         </View>

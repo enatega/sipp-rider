@@ -64,8 +64,8 @@ export default function UpdatePasswordScreen() {
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={[styles.iconTile, { backgroundColor: theme.colors.sky100 }]}>
-            <Feather name="lock" size={24} color={theme.colors.sky600} />
+          <View style={[styles.iconTile, { backgroundColor: theme.colors.primarySoft }]}>
+            <Feather name="lock" size={24} color={theme.colors.brandInk} />
           </View>
           <View style={styles.intro}>
             <Text weight="bold" color={theme.colors.gray900} style={styles.title}>{t('profile_update_password_title')}</Text>

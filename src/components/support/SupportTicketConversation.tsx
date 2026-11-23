@@ -53,14 +53,14 @@ export default function SupportTicketConversation({ ticket, messages, status, us
       </View> : null}
 
       <ScrollView ref={scrollRef} style={styles.messages} contentContainerStyle={styles.messageContent}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.brandInk} />}
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
-        {isLoading ? <View style={styles.state}><ActivityIndicator color={theme.colors.primary} /><Text style={{ color: theme.colors.gray600 }}>{t('support_chat_loading')}</Text></View>
+        {isLoading ? <View style={styles.state}><ActivityIndicator color={theme.colors.brandInk} /><Text style={{ color: theme.colors.gray600 }}>{t('support_chat_loading')}</Text></View>
           : isError ? <View style={styles.state}><Text weight="semiBold" style={{ color: theme.colors.gray900 }}>{t('support_chat_load_failed')}</Text><Text style={{ color: theme.colors.gray600 }}>{t('support_pull_refresh')}</Text></View>
           : messages.length === 0 ? <View style={styles.state}><Text weight="semiBold" style={{ color: theme.colors.gray900 }}>{t('support_chat_empty')}</Text><Text style={{ color: theme.colors.gray600 }}>{t('support_chat_empty_hint')}</Text></View>
           : messages.map((message) => {
             const mine = message.sender_id === userId;
-            return <View key={message.id} style={[styles.bubble, { alignSelf: mine ? 'flex-end' : 'flex-start', backgroundColor: mine ? theme.colors.sky100 : theme.colors.gray50 }]}>
+            return <View key={message.id} style={[styles.bubble, { alignSelf: mine ? 'flex-end' : 'flex-start', backgroundColor: mine ? theme.colors.primarySoft : theme.colors.gray50 }]}>
               <Text variant="caption" weight="semiBold" style={{ color: theme.colors.gray600 }}>{mine ? t('support_you') : t('support_team')}</Text>
               <Text style={{ color: theme.colors.gray900 }}>{message.text}</Text>
               <Text variant="caption" style={[styles.time, { color: theme.colors.gray500 }]}>{message.createdAt ? new Date(message.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : ''}</Text>

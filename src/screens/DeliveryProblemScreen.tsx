@@ -52,7 +52,7 @@ export default function DeliveryProblemScreen({ route, navigation }: Props) {
             <Text variant="caption" weight="bold" color={theme.colors.gray700}>#{route.params.orderId.split('-')[0].toUpperCase()}</Text>
           </View>
 
-          {query.isLoading ? <ActivityIndicator style={styles.loader} color={theme.colors.primary} /> : null}
+          {query.isLoading ? <ActivityIndicator style={styles.loader} color={theme.colors.brandInk} /> : null}
           {query.isError ? (
             <View style={[styles.notice, { backgroundColor: theme.colors.red100 }]}>
               <Text color={theme.colors.red800}>{t('delivery_problem_load_error')}</Text>
@@ -63,8 +63,8 @@ export default function DeliveryProblemScreen({ route, navigation }: Props) {
 
           {isForm ? (
             <>
-              <View style={[styles.intro, { backgroundColor: theme.colors.sky100 }]}>
-                <Feather name="info" size={18} color={theme.colors.sky600} />
+              <View style={[styles.intro, { backgroundColor: theme.colors.primarySoft }]}>
+                <Feather name="info" size={18} color={theme.colors.brandInk} />
                 <Text variant="caption" color={theme.colors.gray700} style={styles.introText}>{t('delivery_problem_explanation')}</Text>
               </View>
 

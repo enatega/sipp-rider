@@ -41,7 +41,7 @@ export default function PaymentProofPreview({ uri, onClose }: Props) {
         {failed && !isDocument ? <Button variant="secondary" label={t('wallet_retry')}
           onPress={() => { setFailed(false); setLoading(true); setAttempt(value => value + 1); }} /> : null}
       </View> : <>
-        {loading ? <ActivityIndicator color={theme.colors.primary} /> : null}
+        {loading ? <ActivityIndicator color={theme.colors.brandInk} /> : null}
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <ScrollView horizontal contentContainerStyle={{ flexGrow: 1 }}>
             <Image key={attempt} source={{ uri }} resizeMode="contain"

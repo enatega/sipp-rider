@@ -101,7 +101,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           backgroundColor: theme.colors.background,
         }}
       >
-        <ActivityIndicator color={theme.colors.primary} />
+        <ActivityIndicator color={theme.colors.brandInk} />
       </View>
     );
   }

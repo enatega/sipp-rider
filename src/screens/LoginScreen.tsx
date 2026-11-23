@@ -97,7 +97,13 @@ export default function LoginScreen({ navigation, route }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
-          <Text weight="bold" color={theme.colors.loginAccent} style={styles.brand}>{t('auth_brand_name')}</Text>
+          <Image
+            source={require('../assets/images/pohanch-header-logo.png')}
+            style={styles.brand}
+            resizeMode="contain"
+            accessibilityRole="image"
+            accessibilityLabel={t('auth_brand_name')}
+          />
           <Image
             source={require('../assets/images/bikeImageBlue.png')}
             style={[styles.heroImage, compact && styles.heroImageCompact]}
@@ -165,7 +171,7 @@ export default function LoginScreen({ navigation, route }: Props) {
                 hitSlop={8}
                 style={styles.forgotButton}
               >
-                <Text weight="semiBold" color={theme.colors.loginAccent}>{t('auth_forgot_password')}</Text>
+                <Text weight="semiBold" color={theme.colors.brandInk}>{t('auth_forgot_password')}</Text>
               </Pressable>
             </View>
 
@@ -184,13 +190,13 @@ export default function LoginScreen({ navigation, route }: Props) {
           style={({ pressed }) => [
             styles.loginButton,
             {
-              backgroundColor: theme.colors.loginAccent,
+              backgroundColor: theme.colors.primary,
               opacity: pressed ? 0.86 : 1,
             },
             loginMutation.isPending || isFetchingExpoPushToken ? styles.disabled : null,
           ]}
         >
-          <Text weight="bold" color={theme.colors.gray900} style={styles.loginButtonText}>
+          <Text weight="bold" color={theme.colors.onPrimary} style={styles.loginButtonText}>
             {loginMutation.isPending || isFetchingExpoPushToken ? t('auth_login_loading') : t('auth_login')}
           </Text>
         </Pressable>
@@ -220,9 +226,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   brand: {
-    fontSize: 25,
-    lineHeight: 32,
-    letterSpacing: -0.7,
+    width: 129,
+    height: 32,
   },
   heroImage: {
     width: '100%',

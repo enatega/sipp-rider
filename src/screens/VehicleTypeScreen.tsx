@@ -78,7 +78,7 @@ export default function VehicleTypeScreen() {
       <View style={styles.optionsSection}>
         {vehicleTypesQuery.isLoading ? (
           <View style={styles.centerState}>
-            <ActivityIndicator color={theme.colors.primary} />
+            <ActivityIndicator color={theme.colors.brandInk} />
           </View>
         ) : vehicleTypesQuery.isError ? (
           <View style={styles.centerState}>
@@ -173,10 +173,10 @@ function SelectionCircle({ selected }: { selected: boolean }) {
     <View
       style={[
         styles.selectionOuter,
-        { borderColor: selected ? theme.colors.primary : theme.colors.gray300 },
+        { borderColor: selected ? theme.colors.brandInk : theme.colors.gray300 },
       ]}
     >
-      {selected ? <View style={[styles.selectionInner, { backgroundColor: theme.colors.primary }]} /> : null}
+      {selected ? <View style={[styles.selectionInner, { backgroundColor: theme.colors.brandInk }]} /> : null}
     </View>
   );
 }

@@ -179,11 +179,11 @@ export default function HomeOrderStatusAction({ order }: Props) {
         />
       ) : null}
       {locationIssue ? (
-        <Pressable onPress={recoverLocation} accessibilityRole="button" style={[styles.locationIssue, { backgroundColor: theme.colors.sky100 }]}>
+        <Pressable onPress={recoverLocation} accessibilityRole="button" style={[styles.locationIssue, { backgroundColor: theme.colors.primarySoft }]}>
           <Text variant="caption" color={theme.colors.gray700}>
             {t(locationIssue.level === 'background' ? 'order_location_background_needed' : 'order_location_foreground_needed')}
           </Text>
-          <Text variant="caption" weight="semiBold" color={theme.colors.sky600}>
+          <Text variant="caption" weight="semiBold" color={theme.colors.brandInk}>
             {t(locationIssue.canAskAgain ? 'order_location_retry' : 'order_location_settings')}
           </Text>
         </Pressable>

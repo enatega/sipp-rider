@@ -21,8 +21,8 @@ export default function DeliveryProblemAction({ label, statusLabel, onPress }: P
       onPress={onPress}
       style={({ pressed }) => [styles.row, { borderColor: theme.colors.gray200, backgroundColor: pressed ? theme.colors.gray100 : theme.colors.surface }]}
     >
-      <View style={[styles.iconTile, { backgroundColor: hasReport ? theme.colors.sky100 : theme.colors.amber100 }]}>
-        <Feather name={hasReport ? 'file-text' : 'alert-triangle'} size={18} color={hasReport ? theme.colors.sky600 : theme.colors.amber800} />
+      <View style={[styles.iconTile, { backgroundColor: hasReport ? theme.colors.primarySoft : theme.colors.amber100 }]}>
+        <Feather name={hasReport ? 'file-text' : 'alert-triangle'} size={18} color={hasReport ? theme.colors.brandInk : theme.colors.amber800} />
       </View>
       <View style={styles.copy}>
         <Text variant="label" weight="semiBold" color={theme.colors.gray900}>{label}</Text>

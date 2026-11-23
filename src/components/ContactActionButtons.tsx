@@ -28,7 +28,7 @@ export default function ContactActionButtons({
           { backgroundColor: theme.colors.primary, opacity: callDisabled ? 0.5 : (pressed ? 0.85 : 1) },
         ]}
       >
-        <CallIcon color={theme.colors.white} />
+        <CallIcon color={theme.colors.onPrimary} />
       </Pressable>
       <Pressable
         onPress={onPressChat}
@@ -38,7 +38,7 @@ export default function ContactActionButtons({
           { backgroundColor: theme.colors.primary, opacity: chatDisabled ? 0.5 : (pressed ? 0.85 : 1) },
         ]}
       >
-        <ChatIcon color={theme.colors.white} />
+        <ChatIcon color={theme.colors.onPrimary} />
       </Pressable>
     </View>
   );

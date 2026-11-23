@@ -45,10 +45,10 @@ export default function WithdrawalDetailView({ data, onProof }: Props) {
       </View>
 
       {data.notes ? (
-        <View style={[styles.callout, { backgroundColor: theme.colors.sky100 }]}>
-          <Feather name="message-square" size={18} color={theme.colors.sky600} />
+        <View style={[styles.callout, { backgroundColor: theme.colors.primarySoft }]}>
+          <Feather name="message-square" size={18} color={theme.colors.brandInk} />
           <View style={styles.calloutCopy}>
-            <Text variant="caption" weight="semiBold" color={theme.colors.sky600}>{t('wallet_admin_notes')}</Text>
+            <Text variant="caption" weight="semiBold" color={theme.colors.brandInk}>{t('wallet_admin_notes')}</Text>
             <Text color={theme.colors.gray900}>{data.notes}</Text>
           </View>
         </View>

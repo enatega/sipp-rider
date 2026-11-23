@@ -73,7 +73,7 @@ export default function EarningsScreen() {
                   {t('earnings_recent_activity')}
                 </Text>
                 <Pressable onPress={handleSeeMore} accessibilityRole="button" hitSlop={8}>
-                  <Text variant="caption" weight="semiBold" color={lightColors.blue500} style={styles.seeMore}>
+                  <Text variant="caption" weight="semiBold" color={lightColors.brandInk} style={styles.seeMore}>
                     {t('earnings_see_more')}
                   </Text>
                 </Pressable>

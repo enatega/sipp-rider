@@ -4,8 +4,8 @@ import { Image } from 'expo-image';
 import { launchSplashColor } from '../theme/colors';
 
 const SPLASH_GIF = require('../../assets/splash.gif');
-// splash.gif runs 2.52 s and then loops. The logo settles at ~1.4 s, so fading out from 2.2 s
-// finishes on the settled frame, before the loop would restart on a blank frame.
+// splash.gif runs ~2.8 s. The Pohanch logo settles at ~1.8 s, so fading out from 2.2 s
+// finishes on the settled frame, before the animation ends.
 const HOLD_AFTER_LOAD_MS = 2200;
 // If the GIF fails to load, the app is not kept behind the splash.
 const LOAD_TIMEOUT_MS = 1500;

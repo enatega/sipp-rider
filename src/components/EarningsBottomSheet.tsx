@@ -97,14 +97,14 @@ export default function EarningsBottomSheet({
                 accessibilityRole="button"
                 style={({ pressed }) => [styles.deliveriesRow, { opacity: pressed ? 0.65 : 1 }]}
               >
-                <Text variant="caption" weight="medium" color={theme.colors.blue500} style={styles.detailText} numberOfLines={1}>
+                <Text variant="caption" weight="medium" color={theme.colors.brandInk} style={styles.detailText} numberOfLines={1}>
                   {t('earnings_deliveries_count', { count: getDeliveriesCount(item) })}
                 </Text>
                 <View style={styles.deliveryValue}>
-                  <Text variant="caption" weight="semiBold" color={theme.colors.blue400} style={styles.detailValue} numberOfLines={1}>
+                  <Text variant="caption" weight="semiBold" color={theme.colors.brandInk} style={styles.detailValue} numberOfLines={1}>
                     {formatCurrency(getDeliveriesAmount(item))}
                   </Text>
-                  <ChevronRight color={theme.colors.blue400} />
+                  <ChevronRight color={theme.colors.brandInk} />
                 </View>
               </Pressable>
             </View>

@@ -100,7 +100,7 @@ export default function ResetPasswordScreen({ navigation, route }: Props) {
 
       {tokenRejected ? (
         <Pressable onPress={() => navigation.popTo('ForgotPassword', { email })} accessibilityRole="button" hitSlop={8} style={styles.restart}>
-          <Text weight="semiBold" color={theme.colors.loginAccent}>{t('reset_request_new_code')}</Text>
+          <Text weight="semiBold" color={theme.colors.brandInk}>{t('reset_request_new_code')}</Text>
         </Pressable>
       ) : null}
     </AuthScreenLayout>

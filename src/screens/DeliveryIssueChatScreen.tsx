@@ -33,13 +33,13 @@ export default function DeliveryIssueChatScreen({ route, navigation }: Props) {
   return <SafeAreaView style={[styles.page, { backgroundColor: theme.colors.background }]}>
     <OrderDetailTopBar title={t('delivery_issue_chat')} onBack={() => navigation.goBack()} />
     <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      {query.isPending && <ActivityIndicator color={theme.colors.primary} />}
+      {query.isPending && <ActivityIndicator color={theme.colors.brandInk} />}
       {query.isError && <View style={styles.notice}><Text>{t('delivery_problem_load_error')}</Text><Button label={t('delivery_problem_retry')} onPress={() => void query.refetch()} /></View>}
       <FlatList ref={list} onScroll={({ nativeEvent }) => {
         followLatest.current = nativeEvent.contentSize.height - nativeEvent.layoutMeasurement.height - nativeEvent.contentOffset.y < 80;
       }} scrollEventThrottle={100} onContentSizeChange={() => { if (followLatest.current) list.current?.scrollToEnd({ animated: true }); }} data={query.data?.messages ?? []} keyExtractor={(item) => item.id} keyboardDismissMode="none" keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.messages} renderItem={({ item }) => <View style={[styles.message, { alignSelf: item.sender_id === userId ? 'flex-end' : 'flex-start',
-          backgroundColor: item.sender_id === userId ? theme.colors.sky100 : theme.colors.gray100 }]}>
+          backgroundColor: item.sender_id === userId ? theme.colors.primarySoft : theme.colors.gray100 }]}>
           <Text color={theme.colors.gray900} selectable>{item.text}</Text><Text variant="caption" color={theme.colors.gray600}>{new Date(item.createdAt).toLocaleString()}</Text>
         </View>} />
       {send.isError && <Text style={styles.notice} color={theme.colors.red800} accessibilityRole="alert">{send.error.message || t('delivery_problem_send_error')}</Text>}

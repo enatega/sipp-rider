@@ -9,9 +9,9 @@ type Props = { title: string; body: string; currencyLabel: string; currency: str
 export default function BankIntroCard({ title, body, currencyLabel, currency }: Props) {
   const { theme } = useAppTheme();
   return (
-    <View style={[styles.card, { backgroundColor: theme.colors.sky100 }]}>
+    <View style={[styles.card, { backgroundColor: theme.colors.primarySoft }]}>
       <View style={[styles.iconTile, { backgroundColor: theme.colors.white }]}>
-        <Feather name="shield" size={20} color={theme.colors.sky600} />
+        <Feather name="shield" size={20} color={theme.colors.brandInk} />
       </View>
       <View style={styles.copy}>
         <Text weight="semiBold" color={theme.colors.gray900}>{title}</Text>

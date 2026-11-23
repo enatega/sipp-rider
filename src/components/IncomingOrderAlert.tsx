@@ -47,7 +47,7 @@ export default function IncomingOrderAlert() {
   return (
     <View pointerEvents="box-none" style={[styles.bannerLayer, { top: insets.top + 8 }]}>
       <View style={[styles.banner, { backgroundColor: theme.colors.surface, shadowColor: theme.colors.shadow }]} accessibilityRole="alert">
-        <Feather name="package" size={20} color={theme.colors.sky600} />
+        <Feather name="package" size={20} color={theme.colors.brandInk} />
         <View style={styles.bannerCopy}>
           <Text variant="label" weight="semiBold" color={theme.colors.gray900} numberOfLines={2}>{t(visibleAlert.kind === 'offer' ? 'status_new_order' : 'manual_assignment_title')}</Text>
           <Text variant="caption" color={theme.colors.gray600} numberOfLines={1}>#{visibleAlert.orderCode.replace(/^#/, '')} · {visibleAlert.storeName || t('chat_store_name')}</Text>

@@ -32,7 +32,7 @@ export default function SupportTicketsHome({ tickets, isLoading, isError, isRefr
 
   return (
     <ScrollView style={{ backgroundColor: theme.colors.background }} contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
+      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={theme.colors.brandInk} />}
       keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
       <View style={styles.intro}>
         <View style={styles.introCopy}>
@@ -64,19 +64,19 @@ export default function SupportTicketsHome({ tickets, isLoading, isError, isRefr
       </View>
 
       {isLoading && !tickets.length ? (
-        <View style={styles.state}><ActivityIndicator color={theme.colors.primary} /><Text style={{ color: theme.colors.gray600 }}>{t('support_loading')}</Text></View>
+        <View style={styles.state}><ActivityIndicator color={theme.colors.brandInk} /><Text style={{ color: theme.colors.gray600 }}>{t('support_loading')}</Text></View>
       ) : isError && !tickets.length ? (
         <View style={[styles.stateCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray200 }]}>
-          <Ionicons name="cloud-offline-outline" size={30} color={theme.colors.primary} />
+          <Ionicons name="cloud-offline-outline" size={30} color={theme.colors.brandInk} />
           <Text weight="bold" style={[styles.stateTitle, { color: theme.colors.gray900 }]}>{t('support_load_failed_title')}</Text>
           <Text style={[styles.stateCopy, { color: theme.colors.gray600 }]}>{t('support_load_failed_body')}</Text>
         </View>
       ) : visible.length === 0 ? (
         <View style={[styles.stateCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.gray200 }]}>
-          <View style={[styles.emptyIcon, { backgroundColor: theme.colors.sky100 }]}><Ionicons name="document-text-outline" size={28} color={theme.colors.sky600} /></View>
+          <View style={[styles.emptyIcon, { backgroundColor: theme.colors.primarySoft }]}><Ionicons name="document-text-outline" size={28} color={theme.colors.brandInk} /></View>
           <Text weight="bold" style={[styles.stateTitle, { color: theme.colors.gray900 }]}>{tickets.length ? t('support_no_results') : t('support_empty_title')}</Text>
           <Text style={[styles.stateCopy, { color: theme.colors.gray600 }]}>{tickets.length ? t('support_no_results_body') : t('support_empty')}</Text>
-          {!tickets.length && <Pressable onPress={onNewTicket} style={[styles.emptyAction, { borderColor: theme.colors.primary }]}><Text weight="semiBold" style={{ color: theme.colors.primary }}>{t('support_new_ticket')}</Text></Pressable>}
+          {!tickets.length && <Pressable onPress={onNewTicket} style={[styles.emptyAction, { borderColor: theme.colors.brandInk }]}><Text weight="semiBold" style={{ color: theme.colors.brandInk }}>{t('support_new_ticket')}</Text></Pressable>}
         </View>
       ) : (
         <View style={styles.ticketList}>
@@ -99,10 +99,10 @@ export default function SupportTicketsHome({ tickets, isLoading, isError, isRefr
                   <Ionicons name="chevron-forward" size={20} color={theme.colors.gray400} />
                 </View>
                 <View style={[styles.ticketFooter, { borderTopColor: theme.colors.gray200 }]}>
-                  <View style={[styles.status, { backgroundColor: closed ? theme.colors.green50 : theme.colors.sky100 }]}>
-                    <Text variant="caption" weight="semiBold" style={{ color: closed ? theme.colors.green600 : theme.colors.sky600 }}>{ticket.status.label}</Text>
+                  <View style={[styles.status, { backgroundColor: closed ? theme.colors.green50 : theme.colors.primarySoft }]}>
+                    <Text variant="caption" weight="semiBold" style={{ color: closed ? theme.colors.green600 : theme.colors.brandInk }}>{ticket.status.label}</Text>
                   </View>
-                  {ticket.unreadCount > 0 && <Text variant="caption" weight="semiBold" style={{ color: theme.colors.primary }}>{ticket.unreadCount} {t('support_unread')}</Text>}
+                  {ticket.unreadCount > 0 && <Text variant="caption" weight="semiBold" style={{ color: theme.colors.brandInk }}>{ticket.unreadCount} {t('support_unread')}</Text>}
                 </View>
               </Pressable>
             );

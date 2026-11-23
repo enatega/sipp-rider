@@ -189,7 +189,7 @@ export default function WalletScreen() {
         }
         ListEmptyComponent={
           historyQuery.isLoading ? (
-            <View style={styles.centered}><ActivityIndicator color={theme.colors.primary} /></View>
+            <View style={styles.centered}><ActivityIndicator color={theme.colors.brandInk} /></View>
           ) : historyQuery.isError ? (
             <View style={[styles.centered, { gap: 12 }]}><Text color={theme.colors.gray700}>{t('wallet_history_error')}</Text><Button variant="secondary" label={t('wallet_retry')} onPress={() => void historyQuery.refetch()} containerStyle={{ alignSelf: 'stretch' }} /></View>
           ) : (
@@ -201,7 +201,7 @@ export default function WalletScreen() {
         ListFooterComponent={
           historyQuery.isFetchingNextPage ? (
             <View style={styles.footerLoader}>
-              <ActivityIndicator color={theme.colors.primary} />
+              <ActivityIndicator color={theme.colors.brandInk} />
             </View>
           ) : historyQuery.isError && transactions.length ? <Button variant="secondary" label={t('wallet_retry')} onPress={() => void historyQuery.fetchNextPage()} /> : null
         }
@@ -209,7 +209,7 @@ export default function WalletScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
+            tintColor={theme.colors.brandInk}
           />
         }
       />

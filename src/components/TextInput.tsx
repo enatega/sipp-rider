@@ -42,7 +42,7 @@ export default function TextInput({
         style={[
           styles.inputContainer,
           {
-            borderColor: error ? theme.colors.red500 : isFocused ? theme.colors.primary : theme.colors.border,
+            borderColor: error ? theme.colors.red500 : isFocused ? theme.colors.brandInk : theme.colors.border,
             backgroundColor: theme.colors.surface,
           },
         ]}

@@ -51,7 +51,7 @@ export default function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         const meta = TAB_META[route.name as keyof typeof TAB_META];
         const label = t(meta?.key ?? 'nav_home');
         const Icon = meta?.Icon ?? HomeIcon;
-        const iconColor = focused ? theme.colors.primary : theme.colors.gray400;
+        const iconColor = focused ? theme.colors.primary :theme.colors.gray400;
         const badgeCount = route.name === 'HomeTab' ? chatUnread.data?.total ?? 0
           : route.name === 'ProfileTab' ? notificationUnread.data?.unreadCount ?? 0 : 0;
 
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: { width: 24, height: 24, alignItems: 'center', justifyContent: 'center' },
   badge: { position: 'absolute', right: -17, top: -9, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 3, alignItems: 'center', justifyContent: 'center' },
-  badgeText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
+  badgeText: { color: '#111111', fontSize: 10, fontWeight: '700' },
   label: {
     fontSize: typography.size.xs,
     lineHeight: typography.lineHeight.xs,

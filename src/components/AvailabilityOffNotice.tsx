@@ -16,7 +16,7 @@ export default function AvailabilityOffNotice({ onTurnOn, isPending = false }: P
   const { theme } = useAppTheme();
   const { t } = useTranslations('app');
   const { colors } = theme;
-  const accent = colors.primary;
+  const accent = colors.brandInk;
   const accentSoft = withAlpha(colors.primary, 0.16);
   const accentFaint = withAlpha(colors.primary, 0.08);
 
@@ -53,7 +53,7 @@ export default function AvailabilityOffNotice({ onTurnOn, isPending = false }: P
             { backgroundColor: colors.primary, opacity: isPending ? 0.5 : pressed ? 0.9 : 1 },
           ]}
         >
-          <Text weight="semiBold" color={colors.white} numberOfLines={1} style={styles.buttonLabel}>
+          <Text weight="semiBold" color={colors.onPrimary} numberOfLines={1} style={styles.buttonLabel}>
             {t('home_availability_off_action')}
           </Text>
         </Pressable>

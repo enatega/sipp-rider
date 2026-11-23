@@ -126,7 +126,7 @@ export default function RiderOrdersList({ isActive = true, tab, highlightedOrder
       ListFooterComponent={
         query.isFetchingNextPage ? (
           <View style={styles.footerLoading}>
-            <ActivityIndicator color={theme.colors.primary} />
+            <ActivityIndicator color={theme.colors.brandInk} />
           </View>
         ) : null
       }

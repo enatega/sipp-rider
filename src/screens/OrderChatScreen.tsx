@@ -357,7 +357,7 @@ export default function OrderChatScreen({ navigation, route }: Props) {
         <View style={[styles.flex, { backgroundColor: theme.colors.white }]}>
           {messagesQuery.isLoading ? (
             <View style={styles.centerContent}>
-              <ActivityIndicator color={theme.colors.primary} />
+              <ActivityIndicator color={theme.colors.brandInk} />
             </View>
           ) : showEmptyState ? (
             <View style={styles.centerContent}>

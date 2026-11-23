@@ -50,7 +50,7 @@ export default function Button({
       <Text
         variant="body"
         weight="semiBold"
-        color={textColor ?? (variant === 'primary' ? theme.colors.white : theme.colors.text)}
+        color={textColor ?? (variant === 'primary' ? theme.colors.onPrimary : theme.colors.text)}
       >
         {label}
       </Text>

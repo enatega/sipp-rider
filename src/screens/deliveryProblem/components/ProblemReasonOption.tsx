@@ -20,7 +20,7 @@ export default function ProblemReasonOption({ reason, label, isSelected, onPress
   const isSafety = reason === 'safety';
   const tile = isSafety
     ? { background: theme.colors.red100, foreground: theme.colors.red800 }
-    : { background: theme.colors.sky100, foreground: theme.colors.sky600 };
+    : { background: theme.colors.primarySoft, foreground: theme.colors.brandInk };
 
   return (
     <Pressable
@@ -30,8 +30,8 @@ export default function ProblemReasonOption({ reason, label, isSelected, onPress
       style={[
         styles.row,
         {
-          backgroundColor: isSelected ? theme.colors.sky100 : theme.colors.surface,
-          borderColor: isSelected ? theme.colors.sky600 : theme.colors.gray200,
+          backgroundColor: isSelected ? theme.colors.primarySoft : theme.colors.surface,
+          borderColor: isSelected ? theme.colors.brandInk : theme.colors.gray200,
           borderWidth: isSelected ? 1.5 : 1,
         },
       ]}
@@ -40,7 +40,7 @@ export default function ProblemReasonOption({ reason, label, isSelected, onPress
         <Feather name={REASON_ICONS[reason]} size={20} color={tile.foreground} />
       </View>
       <Text weight={isSelected ? 'bold' : 'medium'} color={theme.colors.gray900} style={styles.label}>{label}</Text>
-      <Feather name={isSelected ? 'check-circle' : 'circle'} size={22} color={isSelected ? theme.colors.sky600 : theme.colors.gray300} />
+      <Feather name={isSelected ? 'check-circle' : 'circle'} size={22} color={isSelected ? theme.colors.brandInk : theme.colors.gray300} />
     </Pressable>
   );
 }

@@ -14,7 +14,7 @@ const ACTIVE_ORDER_STORAGE_KEY = 'sip-rider-active-tracking-order';
 const LAST_SENT_FIX_STORAGE_KEY = 'sip-rider-bg-last-sent-fix';
 // Bump when the startLocationUpdatesAsync options change, so a task registered by an older build
 // is restarted with the new options instead of being reused as-is.
-const TRACKING_OPTIONS_VERSION = '3';
+const TRACKING_OPTIONS_VERSION = '4';
 const TRACKING_OPTIONS_VERSION_STORAGE_KEY = 'sip-rider-bg-tracking-options-version';
 
 type SentFix = { orderId: string; latitude: number; longitude: number; timestamp: number };
@@ -202,8 +202,8 @@ export async function startRiderBackgroundLocation(orderId: string) {
     foregroundService: {
       killServiceOnDestroy: false,
       notificationBody: 'Sharing your location for the active delivery.',
-      notificationColor: '#2196F3',
-      notificationTitle: 'Sipp delivery in progress',
+      notificationColor: '#111111',
+      notificationTitle: 'Pohanch delivery in progress',
     },
     pausesUpdatesAutomatically: false,
     showsBackgroundLocationIndicator: true,

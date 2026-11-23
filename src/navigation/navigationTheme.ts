@@ -11,7 +11,7 @@ export function buildNavigationTheme(theme: Theme): NavigationTheme {
         card: theme.colors.surface,
         text: theme.colors.text,
         border: theme.colors.border,
-        primary: theme.colors.primary,
+        primary: theme.colors.brandInk,
       },
     };
   }
@@ -24,7 +24,7 @@ export function buildNavigationTheme(theme: Theme): NavigationTheme {
       card: theme.colors.surface,
       text: theme.colors.text,
       border: theme.colors.border,
-      primary: theme.colors.primary,
+      primary: theme.colors.brandInk,
     },
   };
 }

@@ -62,7 +62,7 @@ export default function LanguageScreen() {
         <View style={styles.list}>
           {languageQuery.isLoading ? (
             <View style={styles.centerState}>
-              <ActivityIndicator color={theme.colors.primary} />
+              <ActivityIndicator color={theme.colors.brandInk} />
             </View>
           ) : (
             LANGUAGE_OPTIONS.map((option) => (
@@ -116,8 +116,8 @@ function LanguageRow({
       >
         {option.label}
       </Text>
-      <View style={[styles.selectionCircle, { borderColor: selected ? theme.colors.primary : theme.colors.gray300 }]}>
-        {selected ? <View style={[styles.selectionDot, { backgroundColor: theme.colors.primary }]} /> : null}
+      <View style={[styles.selectionCircle, { borderColor: selected ? theme.colors.brandInk : theme.colors.gray300 }]}>
+        {selected ? <View style={[styles.selectionDot, { backgroundColor: theme.colors.brandInk }]} /> : null}
       </View>
     </Pressable>
   );

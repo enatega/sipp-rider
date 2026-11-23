@@ -71,8 +71,8 @@ export default function EarningsDateRangeSheet({ visible, startDate, endDate, on
             ))}
           </View>
           {error ? <Text variant="caption" color={theme.colors.gray900}>{t('earnings_date_error')}</Text> : null}
-          <Pressable style={[styles.apply, { backgroundColor: theme.colors.blue500 }]} onPress={apply} accessibilityRole="button">
-            <Text variant="body" weight="semiBold" color={theme.colors.white}>{t('earnings_apply_filter')}</Text>
+          <Pressable style={[styles.apply, { backgroundColor: theme.colors.primary }]} onPress={apply} accessibilityRole="button">
+            <Text variant="body" weight="semiBold" color={theme.colors.onPrimary}>{t('earnings_apply_filter')}</Text>
           </Pressable>
           <Pressable style={styles.clear} onPress={onClear} accessibilityRole="button">
             <Text variant="body" color={theme.colors.gray700}>{t('earnings_clear_filter')}</Text>

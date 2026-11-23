@@ -136,11 +136,11 @@ export default function DeliveryProgressSection({
                       styles.timelineDot,
                       {
                         backgroundColor: row.isCompleted ? theme.colors.primary : theme.colors.gray100,
-                        borderColor: row.isCompleted ? theme.colors.primary : theme.colors.gray250,
+                        borderColor: row.isCompleted ? theme.colors.brandInk : theme.colors.gray250,
                       },
                     ]}
                   >
-                    {row.isCompleted ? <CheckIcon color={theme.colors.white} /> : null}
+                    {row.isCompleted ? <CheckIcon color={theme.colors.onPrimary} /> : null}
                   </View>
                   {index < timelineRows.length - 1 ? (
                     <View

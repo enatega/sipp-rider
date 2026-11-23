@@ -37,8 +37,8 @@ export default function DocumentImagePickerModal({ visible, onClose, onPickFromC
               onPress={option.onPress}
               style={({ pressed }) => [styles.option, { borderColor: theme.colors.gray200, backgroundColor: pressed ? theme.colors.gray100 : theme.colors.surface }]}
             >
-              <View style={[styles.iconTile, { backgroundColor: theme.colors.sky100 }]}>
-                <Feather name={option.icon} size={20} color={theme.colors.sky600} />
+              <View style={[styles.iconTile, { backgroundColor: theme.colors.primarySoft }]}>
+                <Feather name={option.icon} size={20} color={theme.colors.brandInk} />
               </View>
               <Text weight="medium" color={theme.colors.gray900} style={styles.optionLabel}>{option.label}</Text>
               <Feather name="chevron-right" size={18} color={theme.colors.gray500} />

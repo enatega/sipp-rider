@@ -11,7 +11,7 @@ export default function ProblemReportSummary({ report }: { report: DeliveryProbl
   const { t } = useTranslations('app');
   const inReview = report.status === 'in_progress';
   const chip = inReview
-    ? { background: theme.colors.sky100, foreground: theme.colors.sky600 }
+    ? { background: theme.colors.primarySoft, foreground: theme.colors.brandInk }
     : { background: theme.colors.amber100, foreground: theme.colors.amber800 };
   const rows: Array<[string, React.ReactNode]> = [
     [t('delivery_problem_reference'), <Text key="ref" selectable weight="semiBold" color={theme.colors.gray900}>{report.ticketId}</Text>],

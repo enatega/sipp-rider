@@ -3,26 +3,26 @@ const googleMapsApiKey =
 
 module.exports = {
   expo: {
-    name: "Sipp Rider",
+    name: "Pohanch Rider",
     slug: "sipp-rider",
-    owner: "sipp-delivery",
-    version: "1.1.10",
+    owner: "ninjas_code",
+    version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
     splash: {
       image: "./assets/splash-launch.png",
       resizeMode: "cover",
-      backgroundColor: "#38B6FF",
+      backgroundColor: "#F7E300",
     },
     ios: {
       buildNumber: "8",
       supportsTablet: true,
-      bundleIdentifier: "com.sipp.rider.app",
+      bundleIdentifier: "com.enatega.deliveries.rider",
       splash: {
         image: "./assets/splash-launch.png",
         resizeMode: "cover",
-        backgroundColor: "#38B6FF",
+        backgroundColor: "#F7E300",
       },
       // iOS shows the icon edge to edge, so this copy crops the margin away to match Android's framing.
       icon: "./assets/ios-icon.png",
@@ -31,17 +31,18 @@ module.exports = {
       },
     },
     android: {
-      versionCode: 20,
+      versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#38B6FF",
+        monochromeImage: "./assets/adaptive-icon-monochrome.png",
+        backgroundColor: "#F7E300",
       },
       splash: {
         image: "./assets/splash-launch.png",
         resizeMode: "cover",
-        backgroundColor: "#38B6FF",
+        backgroundColor: "#F7E300",
       },
-      package: "com.sipp.rider.app",
+      package: "com.enatega.deliveries.rider",
       googleServicesFile: "./google-services.json",
       edgeToEdgeEnabled: true,
       softwareKeyboardLayoutMode: "resize",
@@ -55,7 +56,7 @@ module.exports = {
       favicon: "./assets/favicon.png",
     },
     updates: {
-      url: "https://u.expo.dev/54910e7e-fa72-4582-aec7-a45f203f5873",
+      url: "https://u.expo.dev/bdc9815d-60c7-4320-9dfc-3430ab55eb81",
     },
     runtimeVersion: {
       policy: "appVersion",
@@ -89,9 +90,9 @@ module.exports = {
           isAndroidForegroundServiceEnabled: true,
           isIosBackgroundLocationEnabled: true,
           locationAlwaysAndWhenInUsePermission:
-            "Allow Sipp Rider to share your location during an active delivery, including while navigation is open.",
+            "Allow Pohanch Rider to share your location during an active delivery, including while navigation is open.",
           locationWhenInUsePermission:
-            "Allow Sipp Rider to share your live location while you deliver an active order.",
+            "Allow Pohanch Rider to share your live location while you deliver an active order.",
         },
       ],
       [
@@ -107,7 +108,7 @@ module.exports = {
     ],
     extra: {
       eas: {
-        projectId: "54910e7e-fa72-4582-aec7-a45f203f5873",
+        projectId: "bdc9815d-60c7-4320-9dfc-3430ab55eb81",
       },
     },
   },

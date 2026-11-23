@@ -36,7 +36,7 @@ export default function WithdrawalHistorySheet({ onClose }: Props) {
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <WalletHeader title={t(selected ? 'wallet_withdrawal_details' : 'wallet_withdrawal_history')} onBackPress={close} />
       {selected ? <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        {detail.isLoading ? <ActivityIndicator color={theme.colors.primary} /> : detail.isError ? feedback(t('wallet_detail_error'), () => void detail.refetch()) : detail.data ?
+        {detail.isLoading ? <ActivityIndicator color={theme.colors.brandInk} /> : detail.isError ? feedback(t('wallet_detail_error'), () => void detail.refetch()) : detail.data ?
           <WithdrawalDetailView data={detail.data} onProof={setProof} /> : null}
       </ScrollView> : <FlatList data={items}
         keyExtractor={(item, index) => item.request_id || `unavailable-${index}`}
@@ -52,9 +52,9 @@ export default function WithdrawalHistorySheet({ onClose }: Props) {
           if (!item.request_id) { setMissingId(true); return; }
           setMissingId(false); setSelected(item.request_id);
         }} />}
-        ListEmptyComponent={history.isLoading ? <ActivityIndicator color={theme.colors.primary} /> : feedback(t(history.isError ? 'wallet_history_error' : 'wallet_no_withdrawals'), history.isError ? () => void history.refetch() : undefined)}
-        ListFooterComponent={history.isFetchingNextPage ? <ActivityIndicator color={theme.colors.primary} /> : history.isError && items.length ?
-          <Pressable onPress={() => void history.fetchNextPage()} style={{ padding: 16, minHeight: 48 }}><Text color={theme.colors.sky600}>{t('wallet_retry')}</Text></Pressable> : null} />}
+        ListEmptyComponent={history.isLoading ? <ActivityIndicator color={theme.colors.brandInk} /> : feedback(t(history.isError ? 'wallet_history_error' : 'wallet_no_withdrawals'), history.isError ? () => void history.refetch() : undefined)}
+        ListFooterComponent={history.isFetchingNextPage ? <ActivityIndicator color={theme.colors.brandInk} /> : history.isError && items.length ?
+          <Pressable onPress={() => void history.fetchNextPage()} style={{ padding: 16, minHeight: 48 }}><Text color={theme.colors.brandInk}>{t('wallet_retry')}</Text></Pressable> : null} />}
       {proof ? <PaymentProofPreview uri={proof} onClose={() => setProof(null)} /> : null}
     </SafeAreaView>
   </Modal>;

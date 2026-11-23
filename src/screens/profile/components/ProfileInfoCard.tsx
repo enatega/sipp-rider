@@ -27,8 +27,8 @@ export default function ProfileInfoCard({ rows }: { rows: ProfileInfoRow[] }) {
             <Text weight="semiBold" color={theme.colors.gray900} numberOfLines={1}>{row.value}</Text>
           </View>
           {row.actionLabel ? (
-            <Pressable accessibilityRole="button" onPress={row.onActionPress} hitSlop={8} style={[styles.action, { backgroundColor: theme.colors.sky100 }]}>
-              <Text variant="caption" weight="semiBold" color={theme.colors.sky600}>{row.actionLabel}</Text>
+            <Pressable accessibilityRole="button" onPress={row.onActionPress} hitSlop={8} style={[styles.action, { backgroundColor: theme.colors.primarySoft }]}>
+              <Text variant="caption" weight="semiBold" color={theme.colors.brandInk}>{row.actionLabel}</Text>
             </Pressable>
           ) : null}
         </View>

@@ -67,7 +67,7 @@ export default function WithdrawBottomSheet({
               </Pressable>
             </View>
 
-            <View style={[styles.availableCard, { backgroundColor: theme.colors.sky100 }]}>
+            <View style={[styles.availableCard, { backgroundColor: theme.colors.primarySoft }]}>
               <Text variant="label" color={theme.colors.gray700}>{availableLabel}</Text>
               <Text weight="bold" color={theme.colors.gray900}>{formatCurrency(availableAmount)}</Text>
             </View>

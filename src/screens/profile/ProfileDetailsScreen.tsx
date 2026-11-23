@@ -46,7 +46,7 @@ export default function ProfileDetailsScreen() {
           imageUri={profile?.profileImage}
         />
 
-        {profileQuery.isLoading ? <ActivityIndicator style={styles.loader} color={theme.colors.primary} /> : null}
+        {profileQuery.isLoading ? <ActivityIndicator style={styles.loader} color={theme.colors.brandInk} /> : null}
 
         {profileQuery.isError ? (
           <View style={[styles.errorCard, { backgroundColor: theme.colors.red100 }]}>

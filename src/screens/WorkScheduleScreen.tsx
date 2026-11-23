@@ -124,7 +124,7 @@ export default function WorkScheduleScreen() {
       <View style={styles.listWrap}>
         {workScheduleQuery.isLoading ? (
           <View style={styles.centerState}>
-            <ActivityIndicator color={theme.colors.primary} />
+            <ActivityIndicator color={theme.colors.brandInk} />
           </View>
         ) : workScheduleQuery.isError ? (
           <View style={styles.centerState}>
@@ -261,7 +261,7 @@ function DayScheduleCard({
             {hasMultipleSlots ? (
               <RemoveIcon color={theme.colors.red500} iconColor={theme.colors.white} />
             ) : (
-              <AddIcon color={theme.colors.primary} iconColor={theme.colors.white} />
+              <AddIcon color={theme.colors.brandInk} iconColor={theme.colors.white} />
             )}
           </Pressable>
         </View>
@@ -269,10 +269,10 @@ function DayScheduleCard({
       {hasMultipleSlots ? (
         <Pressable
           onPress={onAddSlotFromMulti}
-          style={[styles.addSlotRow, { borderColor: theme.colors.primary, backgroundColor: theme.colors.surface }]}
+          style={[styles.addSlotRow, { borderColor: theme.colors.brandInk, backgroundColor: theme.colors.surface }]}
           hitSlop={6}
         >
-          <Text weight="medium" style={{ color: theme.colors.primary, fontSize: theme.typography.size.md }}>
+          <Text weight="medium" style={{ color: theme.colors.brandInk, fontSize: theme.typography.size.md }}>
             + {t('work_schedule_add_slot')}
           </Text>
         </Pressable>

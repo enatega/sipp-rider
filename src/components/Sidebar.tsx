@@ -9,7 +9,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { useConfirmLogout } from '../hooks/useConfirmLogout';
 import { useTranslations } from '../localization/LocalizationProvider';
 import { useRiderProfileQuery } from '../hooks/useRiderProfileQuery';
-import { PRIVACY_POLICY_URL } from '../utils/legalLinks';
+import { ABOUT_US_URL, HELP_URL, PRIVACY_POLICY_URL } from '../utils/legalLinks';
 
 type Props = {
   visible: boolean;
@@ -39,8 +39,6 @@ const SIDEBAR_ICONS = {
   help: require('../assets/images/help.png'),
   logout: require('../assets/images/logout.png'),
 } as const;
-const ABOUT_URL = 'https://multivendor.enatega.com/about';
-const HELP_URL = 'https://ninjascode.com/';
 
 function IconBox({ children }: { children: React.ReactNode }) { return <View style={styles.iconBox}>{children}</View>; }
 function ChevronRight({ color }: { color: string }) { return <View style={[styles.chevron, { borderColor: color }]} />; }
@@ -102,7 +100,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'availability',
       type: 'toggle',
       label: t('menu_availability'),
-      icon: <Image source={SIDEBAR_ICONS.availability} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.availability} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       value: availability,
       onToggle: onAvailabilityChange,
       subLabel: availability ? t('menu_available') : t('menu_unavailable'),
@@ -111,7 +109,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'language',
       type: 'nav',
       label: t('menu_language'),
-      icon: <Image source={SIDEBAR_ICONS.language} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.language} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         onClose();
         onNavigate('Language');
@@ -121,7 +119,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'vehicle',
       type: 'nav',
       label: t('menu_vehicle_type'),
-      icon: <Image source={SIDEBAR_ICONS.vehicleType} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.vehicleType} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         onClose();
         onNavigate('VehicleType');
@@ -131,7 +129,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'bank',
       type: 'nav',
       label: t('menu_bank_management'),
-      icon: <Image source={SIDEBAR_ICONS.bankManagement} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.bankManagement} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         onClose();
         onNavigate('BankManagement');
@@ -141,7 +139,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'schedule',
       type: 'nav',
       label: t('menu_work_schedule'),
-      icon: <Image source={SIDEBAR_ICONS.workSchedule} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.workSchedule} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         onClose();
         onNavigate('WorkSchedule');
@@ -151,7 +149,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'profile',
       type: 'nav',
       label: t('menu_profile'),
-      icon: <Image source={SIDEBAR_ICONS.profile} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.profile} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         onClose();
         onSwitchTab?.();
@@ -161,7 +159,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'privacy',
       type: 'nav',
       label: t('menu_privacy_policy'),
-      icon: <Image source={SIDEBAR_ICONS.vehicleType} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.vehicleType} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         void openExternalUrl(PRIVACY_POLICY_URL);
       },
@@ -170,16 +168,16 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       key: 'about',
       type: 'nav',
       label: t('menu_about_us'),
-      icon: <Image source={SIDEBAR_ICONS.aboutUs} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.aboutUs} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
-        void openExternalUrl(ABOUT_URL);
+        void openExternalUrl(ABOUT_US_URL);
       },
     },
     {
       key: 'help',
       type: 'nav',
       label: t('menu_help'),
-      icon: <Image source={SIDEBAR_ICONS.help} style={[styles.iconImage, { tintColor: theme.colors.primary }]} resizeMode="contain" />,
+      icon: <Image source={SIDEBAR_ICONS.help} style={[styles.iconImage, { tintColor: theme.colors.brandInk }]} resizeMode="contain" />,
       onPress: () => {
         void openExternalUrl(HELP_URL);
       },
@@ -209,7 +207,7 @@ export default function Sidebar({ visible, onClose, availability, isAvailability
       <Animated.View style={[styles.drawer, { backgroundColor: theme.colors.gray50, transform: [{ translateX }] }]}>
         <View style={[styles.header, { backgroundColor: theme.colors.primary, paddingTop: insets.top + 10 }]}>
           <View style={[styles.avatarCircle, { backgroundColor: theme.colors.white }]}>
-            <Text variant="body" weight="semiBold" color={theme.colors.primary}>{initials}</Text>
+            <Text variant="body" weight="semiBold" color={theme.colors.brandInk}>{initials}</Text>
           </View>
           <Text variant="subtitle" weight="bold" color={theme.colors.text} style={styles.userName}>{displayName}</Text>
           <View style={[styles.riderBadge, { backgroundColor: theme.colors.tertiary }]}>

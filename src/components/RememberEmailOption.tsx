@@ -11,7 +11,7 @@ export default function RememberEmailOption({ checked, disabled, onPress }: Prop
   const { t } = useTranslations('app');
   return <Pressable accessibilityRole="checkbox" accessibilityState={{ checked, disabled }}
     disabled={disabled} onPress={onPress} style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-    <Feather name={checked ? 'check-square' : 'square'} size={22} color={theme.colors.loginAccent} />
+    <Feather name={checked ? 'check-square' : 'square'} size={22} color={theme.colors.brandInk} />
     <View style={{ flex: 1 }}><Text>{t('auth_remember_me')}</Text></View>
   </Pressable>;
 }

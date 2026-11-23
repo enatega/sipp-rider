@@ -25,7 +25,7 @@ export default function ToggleSwitch({ value, onValueChange, disabled = false }:
     }).start();
   }, [value, translateX]);
 
-  const trackColor = value ? theme.colors.secondary : theme.colors.gray300;
+  const trackColor = value ? theme.colors.primary : theme.colors.gray300;
 
   return (
     <Pressable
@@ -37,7 +37,7 @@ export default function ToggleSwitch({ value, onValueChange, disabled = false }:
         {
           backgroundColor: trackColor,
           opacity: disabled ? 0.5 : 1,
-          borderColor: value ? theme.colors.secondary : theme.colors.gray300,
+          borderColor: value ? theme.colors.primary : theme.colors.gray300,
         },
       ]}
     >

@@ -36,7 +36,7 @@ function statusTone(colors: ThemeColors, status: string) {
   const value = status.toLowerCase();
   if (value.includes('deliver') || value.includes('ready') || value.includes('paid')) return { background: colors.green50, text: colors.green600 };
   if (value.includes('cancel') || value.includes('reject') || value.includes('fail')) return { background: colors.red100, text: colors.red800 };
-  return { background: colors.sky100, text: colors.sky600 };
+  return { background: colors.primarySoft, text: colors.brandInk };
 }
 
 function extractCourierNote(customerComment: string | null) {
@@ -144,7 +144,7 @@ export default function HomeOrderCard({ order, tab, highlighted = false }: Props
   };
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: highlighted ? theme.colors.primary : theme.colors.gray200, shadowColor: theme.colors.shadow }]}>
+    <View style={[styles.card, { backgroundColor: theme.colors.surface, borderColor: highlighted ? theme.colors.brandInk : theme.colors.gray200, shadowColor: theme.colors.shadow }]}>
       <Pressable onPress={openDetail} disabled={tab !== 'processing'} style={styles.header} accessibilityRole={tab === 'processing' ? 'button' : undefined} accessibilityLabel={tab === 'processing' ? t('home_open_order', { code }) : undefined}>
         <View style={styles.headerCopy}>
           <Text variant="subtitle" weight="bold" color={theme.colors.gray900}>#{code}</Text>
@@ -179,11 +179,11 @@ export default function HomeOrderCard({ order, tab, highlighted = false }: Props
       {tab === 'new' && assignError ? <Text variant="caption" color={theme.colors.red500}>{assignError}</Text> : null}
       {tab === 'new' && order.canAssignMe ? <Button label={assignOrderMutation.isPending ? t('order_assigning') : t('order_assign_me')} onPress={assignOrder} disabled={assignOrderMutation.isPending} containerStyle={styles.primaryButton} textColor={theme.colors.gray900} /> : null}
       {atStoreNotice ? (
-        <View style={[styles.atStoreNotice, { backgroundColor: order.status === 'ready' ? theme.colors.green50 : theme.colors.sky100 }]}>
-          <Text variant="caption" weight="semiBold" color={order.status === 'ready' ? theme.colors.green600 : theme.colors.sky600}>{atStoreNotice}</Text>
+        <View style={[styles.atStoreNotice, { backgroundColor: order.status === 'ready' ? theme.colors.green50 : theme.colors.primarySoft }]}>
+          <Text variant="caption" weight="semiBold" color={order.status === 'ready' ? theme.colors.green600 : theme.colors.brandInk}>{atStoreNotice}</Text>
         </View>
       ) : null}
-      {tab === 'processing' ? <Pressable onPress={openDetail} style={styles.detailsLink} accessibilityRole="button"><Text variant="label" weight="semiBold" color={theme.colors.sky600}>{t('home_view_details')} ›</Text></Pressable> : null}
+      {tab === 'processing' ? <Pressable onPress={openDetail} style={styles.detailsLink} accessibilityRole="button"><Text variant="label" weight="semiBold" color={theme.colors.brandInk}>{t('home_view_details')} ›</Text></Pressable> : null}
       {tab === 'processing' ? <HomeOrderStatusAction order={order} /> : null}
 
     </View>
@@ -201,17 +201,17 @@ function ContactCard({ kind, name, address, image, unreadCount, showChat, onChat
   const label = t(isStore ? 'home_store_contact' : 'home_customer_contact');
   const contactImage = usableImage(image);
   return (
-    <View style={[styles.contactCard, { backgroundColor: isStore ? colors.sky100 : colors.green50 }]}>
+    <View style={[styles.contactCard, { backgroundColor: isStore ? colors.primarySoft : colors.green50 }]}>
       <View style={styles.contactMain}>
         {contactImage ? <Image source={{ uri: contactImage }} style={styles.contactImage} /> : (
           <View style={[styles.contactImage, styles.contactPlaceholder, { backgroundColor: colors.surface }]}>
-            {isStore ? <PickupLocationIcon width={20} height={20} stroke={colors.sky600} /> : <HomeIcon width={20} height={20} stroke={colors.green600} />}
+            {isStore ? <PickupLocationIcon width={20} height={20} stroke={colors.brandInk} /> : <HomeIcon width={20} height={20} stroke={colors.green600} />}
           </View>
         )}
         <View style={styles.contactText}>
           <Text variant="caption" weight="semiBold" color={colors.gray600}>{label}</Text>
           <Text variant="label" weight="bold" color={colors.gray900} numberOfLines={1}>{name}</Text>
-          <ExpandableText text={address?.trim() || '—'} variant="caption" textColor={colors.gray700} linkColor={colors.sky600} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} />
+          <ExpandableText text={address?.trim() || '—'} variant="caption" textColor={colors.gray700} linkColor={colors.brandInk} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} />
         </View>
       </View>
       {!isStore ? <DropOffPreferenceNotice leaveAtDoor={leaveAtDoor} /> : null}

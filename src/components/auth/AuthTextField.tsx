@@ -23,13 +23,13 @@ const AuthTextField = forwardRef<TextInput, Props>(function AuthTextField(
   const { t } = useTranslations('app');
   const [focused, setFocused] = useState(false);
   const [visible, setVisible] = useState(false);
-  const borderColor = error ? theme.colors.red500 : focused ? theme.colors.loginAccent : theme.colors.gray200;
+  const borderColor = error ? theme.colors.red500 : focused ? theme.colors.brandInk : theme.colors.gray200;
 
   return (
     <View style={styles.field}>
       <Text weight="semiBold" color={theme.colors.gray900} style={styles.label}>{label}</Text>
       <View style={[styles.inputWrap, { backgroundColor: theme.colors.white, borderColor }]}>
-        <AuthIcon name={icon} size={layout.icon.xl} color={theme.colors.loginAccent} />
+        <AuthIcon name={icon} size={layout.icon.xl} color={theme.colors.brandInk} />
         <TextInput
           ref={ref}
           placeholderTextColor={theme.colors.gray500}

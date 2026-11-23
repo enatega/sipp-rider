@@ -56,7 +56,7 @@ export default function HeaderLanguageSelect() {
         style={[styles.trigger, { borderColor: theme.colors.gray200, backgroundColor: theme.colors.surface }]}
       >
         {updateLanguage.isPending ? (
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={theme.colors.brandInk} />
         ) : (
           <>
             <Text style={styles.flag}>{current.flag}</Text>
@@ -106,7 +106,7 @@ export default function HeaderLanguageSelect() {
                   >
                     {option.label}
                   </Text>
-                  {isSelected ? <Feather name="check" size={16} color={theme.colors.primary} /> : null}
+                  {isSelected ? <Feather name="check" size={16} color={theme.colors.brandInk} /> : null}
                 </Pressable>
               );
             })}

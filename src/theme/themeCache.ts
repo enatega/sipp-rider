@@ -9,27 +9,14 @@ type StoredThemeCache = {
   updatedAt: string | null;
 };
 
-const HEX_COLOR_PATTERN = /^#([0-9A-F]{3}|[0-9A-F]{6})$/i;
-
-const isHexColor = (value: string | null | undefined): value is string =>
-  Boolean(value && HEX_COLOR_PATTERN.test(value));
-
+// The Pohanch palette is fixed in the app: server-driven colours (legacy defaults such as a purple primary
+// with white button text) would break the yellow-fill / ink-content contrast rules, so they are ignored.
 export const getBrandColorsFromSettings = (
-  settings?: Pick<
+  _settings?: Pick<
     RiderAppSettingsApiResponse,
     'primary_color' | 'secondary_color' | 'tertiary_color'
   > | null
-): BrandColors => ({
-  primary: isHexColor(settings?.primary_color)
-    ? settings.primary_color
-    : defaultBrandColors.primary,
-  secondary: isHexColor(settings?.secondary_color)
-    ? settings.secondary_color
-    : defaultBrandColors.secondary,
-  tertiary: isHexColor(settings?.tertiary_color)
-    ? settings.tertiary_color
-    : defaultBrandColors.tertiary,
-});
+): BrandColors => ({ ...defaultBrandColors });
 
 export const themeCache = {
   async get(): Promise<StoredThemeCache | null> {

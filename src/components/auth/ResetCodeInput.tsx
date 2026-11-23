@@ -32,7 +32,7 @@ export default function ResetCodeInput({ value, onChange, length, accessibilityL
     <Pressable onPress={() => inputRef.current?.focus()} accessible={false} style={styles.row}>
       {Array.from({ length }, (_, index) => {
         const active = focused && index === Math.min(value.length, length - 1);
-        const borderColor = hasError ? theme.colors.red500 : active ? theme.colors.loginAccent : theme.colors.gray200;
+        const borderColor = hasError ? theme.colors.red500 : active ? theme.colors.brandInk : theme.colors.gray200;
         return (
           <View key={index} style={[styles.box, { backgroundColor: theme.colors.surface, borderColor }]}>
             <Text weight="bold" color={theme.colors.gray900} style={styles.digit}>{value[index] ?? ''}</Text>

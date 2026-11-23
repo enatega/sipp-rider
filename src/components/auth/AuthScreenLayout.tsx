@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import AuthIcon, { AuthIconName } from './AuthIcon';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Text from '../Text';
@@ -41,12 +41,18 @@ export default function AuthScreenLayout({ title, subtitle, icon, onBack, childr
               >
                 <AuthIcon name="chevron-left" size={22} color={theme.colors.gray900} />
               </Pressable>
-              <Text weight="bold" color={theme.colors.loginAccent} style={styles.wordmark}>{t('auth_brand_name')}</Text>
+              <Image
+                source={require('../../assets/images/pohanch-header-logo.png')}
+                style={styles.wordmark}
+                resizeMode="contain"
+                accessibilityRole="image"
+                accessibilityLabel={t('auth_brand_name')}
+              />
             </View>
 
             {!keyboardVisible ? (
-              <View style={[styles.iconBadge, { backgroundColor: theme.colors.sky100 }]}>
-                <AuthIcon name={icon} size={28} color={theme.colors.loginAccent} />
+              <View style={[styles.iconBadge, { backgroundColor: theme.colors.primarySoft }]}>
+                <AuthIcon name={icon} size={28} color={theme.colors.brandInk} />
               </View>
             ) : null}
 
@@ -73,7 +79,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   backButton: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.7 },
-  wordmark: { fontSize: 25, lineHeight: 32, letterSpacing: -0.7 },
+  wordmark: { width: 129, height: 32 },
   iconBadge: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginTop: 32 },
   intro: { marginTop: 24, gap: 8 },
   title: { fontSize: 30, lineHeight: 37, letterSpacing: -0.7 },

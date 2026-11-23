@@ -33,8 +33,8 @@ export default function DocumentUploadBox({ imageUri, onPress, onPreview, emptyL
         </>
       ) : (
         <View style={styles.empty}>
-          <View style={[styles.iconTile, { backgroundColor: theme.colors.sky100 }]}>
-            <Feather name="upload-cloud" size={20} color={theme.colors.sky600} />
+          <View style={[styles.iconTile, { backgroundColor: theme.colors.primarySoft }]}>
+            <Feather name="upload-cloud" size={20} color={theme.colors.brandInk} />
           </View>
           <Text variant="caption" weight="medium" color={theme.colors.gray600} style={styles.emptyText}>{emptyLabel}</Text>
         </View>

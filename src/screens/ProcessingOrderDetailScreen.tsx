@@ -241,9 +241,9 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
   const riderMarkerCoordinate = routeProgress?.marker ?? riderLocation;
   const routePolylines = useMemo(
     () => (displayedRoute && displayedRoute.length >= 2
-      ? [{ id: 'route', coordinates: displayedRoute, strokeWidth: 5, strokeColor: theme.colors.sky600 }]
+      ? [{ id: 'route', coordinates: displayedRoute, strokeWidth: 5, strokeColor: theme.colors.brandInk }]
       : []),
-    [displayedRoute, theme.colors.sky600],
+    [displayedRoute, theme.colors.brandInk],
   );
   const inAppNav = useInAppNavigation({
     mapRef,
@@ -548,19 +548,19 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
         >
           {detailQuery.isLoading ? (
             <View style={styles.loadingInline}>
-              <ActivityIndicator color={theme.colors.primary} />
+              <ActivityIndicator color={theme.colors.brandInk} />
             </View>
           ) : detailQuery.isError ? (
             <Pressable accessibilityRole="button" onPress={() => void detailQuery.refetch()} style={styles.detailRetry}>
               <Text variant="label" color={theme.colors.gray700}>{detailQuery.error?.message ?? t('orders_empty')}</Text>
-              <Text variant="caption" weight="bold" color={theme.colors.sky600}>{t('orders_retry')}</Text>
+              <Text variant="caption" weight="bold" color={theme.colors.brandInk}>{t('orders_retry')}</Text>
             </Pressable>
           ) : (
             <>
               <View style={styles.statusHeading}>
                 <View style={styles.statusText}>
                   <View style={styles.currentRow}>
-                    <View style={[styles.currentDot, { backgroundColor: currentProgressStatus === RiderDeliveryProgressStatus.FAILED ? theme.colors.red500 : theme.colors.sky600 }]} />
+                    <View style={[styles.currentDot, { backgroundColor: currentProgressStatus === RiderDeliveryProgressStatus.FAILED ? theme.colors.red500 : theme.colors.brandInk }]} />
                     <Text variant="subtitle" weight="bold" color={theme.colors.gray900} numberOfLines={2}>{currentTitle}</Text>
                   </View>
                   {currentProgressStatus !== RiderDeliveryProgressStatus.DELIVERED && currentProgressStatus !== RiderDeliveryProgressStatus.FAILED ? (
@@ -583,7 +583,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                       key={statusItem}
                       style={[
                         styles.segment,
-                        { backgroundColor: index < step ? theme.colors.sky600 : theme.colors.gray200 },
+                        { backgroundColor: index < step ? theme.colors.primary : theme.colors.gray200 },
                       ]}
                     />
                   ))}
@@ -591,11 +591,11 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
               ) : null}
 
               {showStorePreparingAlert || showReadyForPickupAlert ? (
-                <View style={[styles.inlineNotice, { backgroundColor: showReadyForPickupAlert ? theme.colors.green50 : theme.colors.sky100 }]}>
+                <View style={[styles.inlineNotice, { backgroundColor: showReadyForPickupAlert ? theme.colors.green50 : theme.colors.primarySoft }]}>
                   {showReadyForPickupAlert
                     ? <CheckCircleIcon color={theme.colors.green600} />
-                    : <InfoCircleIcon color={theme.colors.sky600} />}
-                  <Text variant="caption" weight="semiBold" color={showReadyForPickupAlert ? theme.colors.green600 : theme.colors.sky600} style={styles.inlineNoticeText}>
+                    : <InfoCircleIcon color={theme.colors.brandInk} />}
+                  <Text variant="caption" weight="semiBold" color={showReadyForPickupAlert ? theme.colors.green600 : theme.colors.brandInk} style={styles.inlineNoticeText}>
                     {showReadyForPickupAlert
                       ? t('order_alert_ready_pickup_title')
                       : `${t(serverOrderStatus === 'preparing' ? 'order_waiting_store_preparing' : 'order_waiting_order_completion')}. ${t('order_alert_store_preparing_desc')}`}
@@ -683,7 +683,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                 {isLiveTrackingStatus ? t('chat_customer_name') : t('chat_store_name')}
               </Text>
               <Text variant="label" weight="bold" color={theme.colors.gray900} numberOfLines={1}>{destinationName}</Text>
-              {destinationAddress ? <ExpandableText text={destinationAddress} variant="caption" textColor={theme.colors.gray600} linkColor={theme.colors.sky600} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} /> : null}
+              {destinationAddress ? <ExpandableText text={destinationAddress} variant="caption" textColor={theme.colors.gray600} linkColor={theme.colors.brandInk} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} /> : null}
             </View>
             <Pressable
               style={[styles.navigateChip, { backgroundColor: theme.colors.zinc800 }, !navigationDestination && styles.disabledAction]}
@@ -703,7 +703,7 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                 {!isLiveTrackingStatus ? (
                   <View>
                     <Text variant="label" weight="semiBold">{t('home_customer_contact')}</Text>
-                    {detailQuery.data.deliveryAddress ? <ExpandableText text={detailQuery.data.deliveryAddress} variant="caption" textColor={theme.colors.gray600} linkColor={theme.colors.sky600} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} /> : null}
+                    {detailQuery.data.deliveryAddress ? <ExpandableText text={detailQuery.data.deliveryAddress} variant="caption" textColor={theme.colors.gray600} linkColor={theme.colors.brandInk} moreLabel={t('address_details_showMore')} lessLabel={t('address_details_showLess')} /> : null}
                   </View>
                 ) : null}
                 <AddressDetailsView isHistoricalFallback={detailQuery.data.deliveryAddressIsHistoricalFallback} details={detailQuery.data.deliveryAddressDetails} legacyText={detailQuery.data.deliveryAddressExtras} courierMessage={detailQuery.data.courierNote} />
@@ -807,18 +807,18 @@ export default function ProcessingOrderDetailScreen({ route, navigation }: Props
                   <View key={statusItem} style={styles.timelineRow}>
                     <View style={styles.railCol}>
                       <View style={[styles.railDot, {
-                        borderColor: isCompleted || isCurrent ? theme.colors.sky600 : theme.colors.gray300,
-                        backgroundColor: isCompleted ? theme.colors.sky600 : theme.colors.surface,
+                        borderColor: isCompleted || isCurrent ? theme.colors.brandInk : theme.colors.gray300,
+                        backgroundColor: isCompleted ? theme.colors.primary : theme.colors.surface,
                       }]}>
-                        {isCompleted ? <CheckIcon color={theme.colors.white} /> : null}
-                        {isCurrent ? <View style={[styles.currentInner, { backgroundColor: theme.colors.sky600 }]} /> : null}
+                        {isCompleted ? <CheckIcon color={theme.colors.onPrimary} /> : null}
+                        {isCurrent ? <View style={[styles.currentInner, { backgroundColor: theme.colors.brandInk }]} /> : null}
                       </View>
-                      {showConnector ? <View style={[styles.railConnector, { backgroundColor: isCompleted ? theme.colors.sky600 : theme.colors.gray200 }]} /> : null}
+                      {showConnector ? <View style={[styles.railConnector, { backgroundColor: isCompleted ? theme.colors.primary : theme.colors.gray200 }]} /> : null}
                     </View>
                     <Text variant="label" weight={isCurrent ? 'bold' : 'medium'} color={isCurrent || isCompleted ? theme.colors.gray900 : theme.colors.gray500} style={styles.timelineText}>
                       {t(STATUS_TITLE_KEY[statusItem])}
                     </Text>
-                    {isCurrent ? <View style={[styles.timelineCurrentTag, { backgroundColor: theme.colors.sky100 }]}><Text variant="caption" weight="semiBold" color={theme.colors.sky600}>{t('order_current_step')}</Text></View> : null}
+                    {isCurrent ? <View style={[styles.timelineCurrentTag, { backgroundColor: theme.colors.primarySoft }]}><Text variant="caption" weight="semiBold" color={theme.colors.brandInk}>{t('order_current_step')}</Text></View> : null}
                   </View>
                 );
               })}

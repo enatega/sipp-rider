@@ -26,7 +26,7 @@ export default function RootNavigator() {
           backgroundColor: theme.colors.background,
         }}
       >
-        <ActivityIndicator color={theme.colors.primary} />
+        <ActivityIndicator color={theme.colors.brandInk} />
       </View>
     );
   }

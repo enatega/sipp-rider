@@ -25,11 +25,11 @@ export default function AuthPrimaryButton({ label, loadingLabel, loading = false
       accessibilityState={{ disabled: inactive, busy: loading }}
       style={({ pressed }) => [
         styles.button,
-        { backgroundColor: theme.colors.loginAccent },
+        { backgroundColor: theme.colors.primary },
         (pressed || inactive) && styles.muted,
       ]}
     >
-      <Text weight="bold" color={theme.colors.gray900} style={styles.label}>
+      <Text weight="bold" color={theme.colors.onPrimary} style={styles.label}>
         {loading && loadingLabel ? loadingLabel : label}
       </Text>
     </Pressable>

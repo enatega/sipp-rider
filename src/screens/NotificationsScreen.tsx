@@ -155,7 +155,7 @@ export default function NotificationsScreen({ navigation }: Props) {
         ))}
         {items.length < total || (list.isError && items.length > 0) ? (
           <Pressable onPress={() => { if (list.isError) void list.refetch(); else setPage((current) => current + 1); }} style={styles.more} disabled={list.isFetching}>
-            <Text weight="semiBold" color={theme.colors.primary}>{t(list.isError ? 'notifications_retry' : list.isFetching ? 'notifications_loading' : 'notifications_more')}</Text>
+            <Text weight="semiBold" color={theme.colors.brandInk}>{t(list.isError ? 'notifications_retry' : list.isFetching ? 'notifications_loading' : 'notifications_more')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>

@@ -22,7 +22,7 @@ import { useConfirmLogout } from '../../hooks/useConfirmLogout';
 import { MainStackParamList } from '../../navigation/types';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../api/apiClient';
-import { PRIVACY_POLICY_URL } from '../../utils/legalLinks';
+import { ABOUT_US_URL, PRIVACY_POLICY_URL } from '../../utils/legalLinks';
 
 const profileBackground = require('../../assets/images/profileBackground.png');
 const rowIcons = {
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
   if (profileLoading) {
     return (
       <View style={[styles.flex, styles.center, { backgroundColor: theme.colors.gray100 }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator size="large" color={theme.colors.brandInk} />
       </View>
     );
   }
@@ -138,7 +138,7 @@ export default function ProfileScreen() {
       icon: 'info',
       title: t('menu_about_us'),
       subtitle: t('profile_menu_about_subtitle'),
-      onPress: () => openExternalUrl('https://multivendor.enatega.com/about'),
+      onPress: () => openExternalUrl(ABOUT_US_URL),
     },
     {
       key: 'help',
@@ -155,14 +155,14 @@ export default function ProfileScreen() {
         <ImageBackground
           source={profileBackground}
           style={[styles.hero, { backgroundColor: theme.colors.primary }]}
-          imageStyle={[styles.heroImage, { tintColor: theme.colors.primary }]}
+          imageStyle={[styles.heroImage, { tintColor: theme.colors.primaryPressed }]}
         >
           <View style={styles.profileRow}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.avatarImage} />
             ) : (
               <View style={[styles.avatarCircle, { backgroundColor: theme.colors.surface }]}>
-                <Text weight="semiBold" color={theme.colors.primary} style={styles.avatarText}>
+                <Text weight="semiBold" color={theme.colors.brandInk} style={styles.avatarText}>
                   {initials}
                 </Text>
               </View>
@@ -183,7 +183,7 @@ export default function ProfileScreen() {
                 source={rowIcons.clock}
                 style={styles.rowIconImage}
                 resizeMode="contain"
-                tintColor={theme.colors.primary}
+                tintColor={theme.colors.brandInk}
               />
             </View>
             <View style={styles.menuTextWrap}>
@@ -212,7 +212,7 @@ export default function ProfileScreen() {
                 source={rowIcons.user}
                 style={styles.rowIconImage}
                 resizeMode="contain"
-                tintColor={theme.colors.primary}
+                tintColor={theme.colors.brandInk}
               />
             </View>
             <View style={styles.menuTextWrap}>
@@ -311,7 +311,7 @@ function MenuRow({ icon, title, subtitle, onPress, showDivider = false }: MenuRo
           source={iconSource}
           style={styles.rowIconImage}
           resizeMode="contain"
-          tintColor={theme.colors.primary}
+          tintColor={theme.colors.brandInk}
         />
       </View>
       <View style={styles.menuTextWrap}>
